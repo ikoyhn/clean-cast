@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -105,5 +106,10 @@ func GetYoutubeVideo(youtubeVideoId string, c echo.Context) error {
 		panic(r)
 	}
 
-	return c.File("/config/" + youtubeVideoId + ".m4a")
+	file, err := os.Open(filepath.Join("/config/", youtubeVideoId+".m4a"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	return c.Stream(200, "audio/mp4", file)
 }
