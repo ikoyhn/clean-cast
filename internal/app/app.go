@@ -53,10 +53,12 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		return func(c echo.Context) error {
 			if trustedHosts != nil {
 				log.Info("[Security] Checking host...")
+				log.Info("[Security] Host: " + c.Request().Host)
+				log.Info("[Security] Trusted hosts: " + strings.Join(trustedHosts, ", "))
 				host := c.Request().Host
 				if !contains(trustedHosts, host) {
 					log.Error("[Security] Invalid Host!")
-					return echo.NewHTTPError(http.StatusForbidden, "Forbidden")
+					return echo.NewHTTPError(http.StatusForbidden, "Host not trusted")
 				}
 			}
 			log.Info("[Security] Host validated")
