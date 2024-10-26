@@ -30,6 +30,7 @@ func GenerateRssFeed(podcast models.Podcast, c echo.Context) error {
 	ytPodcast := podcastRss.New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.YoutubePodcastId, podcast.Description, &now, &now)
 	ytPodcast.AddImage(transformArtworkURL(podcast.ImageUrl, 3000, 3000))
 	ytPodcast.AtomLink = atomLink
+	ytPodcast.AddCategory(podcast.Category, []string{""})
 
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {

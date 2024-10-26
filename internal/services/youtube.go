@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -73,7 +74,23 @@ func GetYoutubeVideo(youtubeVideoId string, c echo.Context) error {
 	filePath := "/config/" + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
 		// File exists, serve it directly
-		return c.File(filePath)
+		if c.Request().Method == echo.HEAD {
+			// Handle HEAD request
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			fileInfo, err := file.Stat()
+			if err != nil {
+				return err
+			}
+			c.Response().Header().Set("Content-Type", "audio/mpeg")
+			c.Response().Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+			c.Response().WriteHeader(http.StatusOK)
+			return nil
+		}
+		return c.Stream(200, "audio/mp4", getFile(youtubeVideoId))
 	}
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
 	ytdlp.MustInstall(context.TODO(), nil)
@@ -106,10 +123,30 @@ func GetYoutubeVideo(youtubeVideoId string, c echo.Context) error {
 		panic(r)
 	}
 
+	if c.Request().Method == echo.HEAD {
+		// Handle HEAD request
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		fileInfo, err := file.Stat()
+		if err != nil {
+			return err
+		}
+		c.Response().Header().Set("Content-Type", "audio/mpeg")
+		c.Response().Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+		c.Response().WriteHeader(http.StatusOK)
+		return nil
+	}
+	return c.Stream(200, "audio/mp4", getFile(youtubeVideoId))
+}
+
+func getFile(youtubeVideoId string) *os.File {
 	file, err := os.Open(filepath.Join("/config/", youtubeVideoId+".m4a"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
-	return c.Stream(200, "audio/mp4", file)
+	return file
 }
