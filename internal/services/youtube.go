@@ -119,6 +119,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 			log.Errorf("YouTube video download failed with exit code %d", r.ExitCode)
 		}
 		mutex.(*sync.Mutex).Unlock()
+
 		close(done)
 	}()
 

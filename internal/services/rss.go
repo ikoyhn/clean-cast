@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+
 func GenerateRssFeed(podcast models.Podcast, host string) []byte {
 	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
 
@@ -52,6 +53,24 @@ func GenerateRssFeed(podcast models.Podcast, host string) []byte {
 	}
 
 	return ytPodcast.Bytes()
+}
+
+func transformArtworkURL(artworkURL string, newHeight int, newWidth int) string {
+	parsedURL, err := url.Parse(artworkURL)
+	if err != nil {
+		return ""
+	}
+
+	pathComponents := strings.Split(parsedURL.Path, "/")
+	lastComponent := pathComponents[len(pathComponents)-1]
+	newFilename := fmt.Sprintf("%dx%d%s", newHeight, newWidth, filepath.Ext(lastComponent))
+	pathComponents[len(pathComponents)-1] = newFilename
+	newPath := strings.Join(pathComponents, "/")
+
+	newURL := parsedURL
+	newURL.Path = newPath
+
+	return newURL.String()
 }
 
 func transformArtworkURL(artworkURL string, newHeight int, newWidth int) string {

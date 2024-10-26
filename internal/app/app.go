@@ -63,12 +63,14 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 				host := c.Request().Host
 				if !contains(trustedHosts, host) {
 					log.Error("[AUTH] Invalid host")
+
 					return echo.NewHTTPError(http.StatusForbidden, "Forbidden")
 				}
 			}
 			return next(c)
 		}
 	}
+
 
 	authMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -95,6 +97,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		c.Response().Header().Del("Transfer-Encoding")
 		return c.Blob(http.StatusOK, "application/rss+xml; charset=utf-8", data)
 	})))
+
 
 	e.Match([]string{"GET", "HEAD"}, "/media/:youtubeVideoId", authMiddleware(hostMiddleware(func(c echo.Context) error {
 		fileName, done := services.GetYoutubeVideo(c.Param("youtubeVideoId"))
