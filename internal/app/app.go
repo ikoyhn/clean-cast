@@ -65,28 +65,39 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 			return next(c)
 		}
 	}
-	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Validator: func(username, password string, c echo.Context) (bool, error) {
-			// Check if Basic Auth header is present and valid
-			auth := c.Request().Header.Get("Authorization")
-			if !strings.HasPrefix(auth, "Basic ") {
+	e.Use(middleware.BasicAuth(middleware.BasicAuthValidator(func(username, password string, c echo.Context) (bool, error) {
+		// Check if Basic Auth header is present and valid
+		auth := c.Request().Header.Get("Authorization")
+		if !strings.HasPrefix(auth, "Basic ") {
+			return false, nil
+		}
+		decoded, err := base64.StdEncoding.DecodeString(auth[len("Basic "):])
+		if err != nil {
+			return false, nil
+		}
+		decodedPassword := strings.Split(string(decoded), ":")[1]
+		if decodedPassword != passwordEnv {
+			return false, fmt.Errorf("invalid credentials")
+		}
+		return true, nil
+	})))
+
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		if httpErr, ok := err.(*echo.HTTPError); ok {
+			if httpErr.Code == http.StatusUnauthorized {
 				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
-				return false, echo.NewHTTPError(http.StatusUnauthorized, "Basic Auth header is missing or invalid")
+				c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+				c.Response().Header().Set("Content-Length", "0")
+				c.Response().Header().Set("Connection", "close")
+				c.Response().WriteHeader(http.StatusUnauthorized)
+				c.Response().Write([]byte{})
+				return
 			}
-			decoded, err := base64.StdEncoding.DecodeString(auth[len("Basic "):])
-			if err != nil {
-				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
-				return false, echo.NewHTTPError(http.StatusUnauthorized, "Failed to decode Basic Auth credentials")
-			}
-			decodedPassword := strings.Split(string(decoded), ":")[1]
-			if decodedPassword != passwordEnv {
-				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
-				return false, echo.NewHTTPError(http.StatusUnauthorized, "Invalid password")
-			}
-			return true, nil
-		},
-		Realm: "podcastsponsorblock",
-	}))
+		}
+		c.Logger().Error(err)
+		c.Response().WriteHeader(http.StatusInternalServerError)
+		c.Response().Write([]byte("Internal Server Error"))
+	}
 
 	e.GET("/rss/:youtubePlaylistId", middlewareFunc(func(c echo.Context) error {
 		data := services.BuildRssFeed(env.db, c.Param("youtubePlaylistId"), handler(c.Request()))
