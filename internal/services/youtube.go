@@ -11,10 +11,13 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 )
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="
+
+var youtubeVideoMutexes = &sync.Map{}
 
 // Get all youtube playlist items and meta data for the RSS feed
 func getYoutubeData(youtubePlaylistId string) []*youtube.PlaylistItem {
@@ -66,14 +69,23 @@ func cleanPlaylistItems(items []*youtube.PlaylistItem) []*youtube.PlaylistItem {
 	return cleanItems
 }
 
-// When client requests a podcast from the RSS feed use yt-dlp to download the file then serve it
 func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
-	log.Info("[YTDLP] Checking for video...")
+	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
+	if !ok {
+		mutex = &sync.Mutex{}
+		youtubeVideoMutexes.Store(youtubeVideoId, mutex)
+	}
+
+	mutex.(*sync.Mutex).Lock()
+
+	// Check if the file is already being processed
 	filePath := "/config/" + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
+		mutex.(*sync.Mutex).Unlock()
 		return youtubeVideoId, make(chan struct{})
 	}
-	log.Info("[YTDLP] Video not found, downloading...")
+
+	// If not, proceed with the download
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
 	ytdlp.Install(context.TODO(), nil)
 
@@ -85,8 +97,8 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		NoPlaylist().
 		FFmpegLocation("/usr/bin/ffmpeg").
 		Continue().
-		Paths("/config").
-		ProgressFunc(100*time.Millisecond, func(prog ytdlp.ProgressUpdate) {
+		Paths("/config/audio").
+		ProgressFunc(500*time.Millisecond, func(prog ytdlp.ProgressUpdate) {
 			fmt.Printf(
 				"%s @ %s [eta: %s] :: %s\n",
 				prog.Status,
@@ -101,11 +113,12 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	go func() {
 		r, err := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
 		if err != nil {
-			// handle error
+			log.Errorf("Error downloading YouTube video: %v", err)
 		}
 		if r.ExitCode != 0 {
-			// handle error
+			log.Errorf("YouTube video download failed with exit code %d", r.ExitCode)
 		}
+		mutex.(*sync.Mutex).Unlock()
 		close(done)
 	}()
 

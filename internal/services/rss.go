@@ -22,14 +22,13 @@ func GenerateRssFeed(podcast models.Podcast, host string) []byte {
 	ytPodcast.IExplicit = "true"
 	ytPodcast.Docs = "http://www.rssboard.org/rss-specification"
 
-	mediaUrl := host + "/media/" + podcast.YoutubePodcastId
-
-	if os.Getenv("TOKEN") != "" {
-		mediaUrl = mediaUrl + "?token=" + os.Getenv("TOKEN")
-	}
-
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {
+			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
+
+			if os.Getenv("TOKEN") != "" {
+				mediaUrl = mediaUrl + "?token=" + os.Getenv("TOKEN")
+			}
 			enclosure := Enclosure{
 				URL:    mediaUrl,
 				Length: 0,

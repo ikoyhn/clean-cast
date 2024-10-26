@@ -59,7 +59,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 	hostMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if trustedHosts != nil {
-				log.Info("[AUTH] Checking authentication...")
+				log.Info("[AUTH] Checking hosts...")
 				host := c.Request().Host
 				if !contains(trustedHosts, host) {
 					log.Error("[AUTH] Invalid host")
@@ -100,9 +100,9 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		fileName, done := services.GetYoutubeVideo(c.Param("youtubeVideoId"))
 		<-done
 
-		file, err := os.Open("/config/" + fileName + ".m4a")
+		file, err := os.Open("/config/audio/" + fileName + ".m4a")
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to open file: /config/"+fileName+".m4a")
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to open file: /config/audio/"+fileName+".m4a")
 		}
 		defer file.Close()
 
