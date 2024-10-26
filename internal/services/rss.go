@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/xml"
 	"fmt"
-	podcastRss "github.com/eduncan911/podcast"
 	"github.com/labstack/echo/v4"
 	log "github.com/labstack/gommon/log"
 	"ikoyhn/podcast-sponsorblock/internal/models"
@@ -19,7 +18,7 @@ const rssUrl = "/rss/youtubePlaylistId="
 func GenerateRssFeed(podcast models.Podcast, c echo.Context) error {
 	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
 
-	atomLink := &podcastRss.AtomLink{
+	atomLink := &AtomLink{
 		XMLName: xml.Name{Space: "http://www.w3.org/2005/Atom", Local: "link"},
 		HREF:    "https://example.com",
 		Rel:     "self",
@@ -27,24 +26,25 @@ func GenerateRssFeed(podcast models.Podcast, c echo.Context) error {
 	}
 
 	now := time.Now()
-	ytPodcast := podcastRss.New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.YoutubePodcastId, podcast.Description, &now, &now)
+	ytPodcast := New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.YoutubePodcastId, podcast.Description, &now, &now)
 	ytPodcast.AddImage(transformArtworkURL(podcast.ImageUrl, 3000, 3000))
 	ytPodcast.AtomLink = atomLink
 	ytPodcast.AddCategory(podcast.Category, []string{""})
+	ytPodcast.IExplicit = "true"
 
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {
-			enclosure := podcastRss.Enclosure{
+			enclosure := Enclosure{
 				URL:    handler(c.Request()) + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a",
 				Length: 0,
-				Type:   podcastRss.M4A,
+				Type:   M4A,
 			}
 
 			var builder strings.Builder
 			xml.EscapeText(&builder, []byte(podcastEpisode.EpisodeDescription))
 			escapedDescription := builder.String()
 
-			podcastItem := podcastRss.Item{
+			podcastItem := Item{
 				Title:       podcastEpisode.EpisodeName,
 				Description: escapedDescription,
 				GUID:        podcastEpisode.YoutubeVideoId,
