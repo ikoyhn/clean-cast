@@ -2,10 +2,12 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	log "github.com/labstack/gommon/log"
+	"github.com/lrstanley/go-ytdlp"
 	"gorm.io/gorm"
 	setup "ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services"
@@ -20,6 +22,9 @@ type Env struct {
 }
 
 func Start() {
+
+	ytdlp.MustInstall(context.TODO(), nil)
+
 	db, err := setup.ConnectDatabase()
 	if err != nil {
 		log.Panic(err)

@@ -73,7 +73,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		return youtubeVideoId, make(chan struct{})
 	}
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
-	ytdlp.MustInstall(context.TODO(), nil)
+	ytdlp.Install(context.TODO(), nil)
 
 	dl := ytdlp.New().
 		NoProgress().
