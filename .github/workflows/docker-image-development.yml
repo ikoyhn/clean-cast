@@ -26,4 +26,6 @@ jobs:
       with:
         context: .
         push: true
+
         tags: ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:development
+
