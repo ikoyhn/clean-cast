@@ -3,7 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
-	"crypto/subtle"
+	"encoding/base64"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -45,7 +45,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 	trustedHosts := strings.Split(os.Getenv("TRUSTED_HOSTS"), ",")
 
 	// Define the authentication credentials
-	usernameEnv := os.Getenv("USERNAME")
+	// usernameEnv := os.Getenv("USERNAME")
 	passwordEnv := os.Getenv("PASSWORD")
 
 	// Create a custom middleware to check the request's Host header
@@ -65,16 +65,27 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 			return next(c)
 		}
 	}
-
-	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-		// Be careful to use constant time comparison to prevent timing attacks
-		if subtle.ConstantTimeCompare([]byte(username), []byte(usernameEnv)) == 1 &&
-			subtle.ConstantTimeCompare([]byte(password), []byte(passwordEnv)) == 1 {
-			log.Info("[AUTH] Authenticated")
+	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Validator: func(username, password string, c echo.Context) (bool, error) {
+			// Check if Basic Auth header is present and valid
+			auth := c.Request().Header.Get("Authorization")
+			if !strings.HasPrefix(auth, "Basic ") {
+				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
+				return false, echo.NewHTTPError(http.StatusUnauthorized, "Basic Auth header is missing or invalid")
+			}
+			decoded, err := base64.StdEncoding.DecodeString(auth[len("Basic "):])
+			if err != nil {
+				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
+				return false, echo.NewHTTPError(http.StatusUnauthorized, "Failed to decode Basic Auth credentials")
+			}
+			decodedPassword := strings.Split(string(decoded), ":")[1]
+			if decodedPassword != passwordEnv {
+				c.Response().Header().Set("WWW-Authenticate", "Basic realm=\"podcastsponsorblock\"")
+				return false, echo.NewHTTPError(http.StatusUnauthorized, "Invalid password")
+			}
 			return true, nil
-		}
-		log.Error("[AUTH] Failed Authentication")
-		return false, nil
+		},
+		Realm: "podcastsponsorblock",
 	}))
 
 	e.GET("/rss/:youtubePlaylistId", middlewareFunc(func(c echo.Context) error {
