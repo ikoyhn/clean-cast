@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -39,15 +40,48 @@ func Start() {
 }
 
 func (env *Env) registerRoutes(e *echo.Echo) {
-	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
+	// Define the trusted hosts
+	trustedHosts := strings.Split(os.Getenv("TRUSTED_HOSTS"), ",")
+
+	// Define the authentication credentials
+	username := os.Getenv("USERNAME")
+	password := os.Getenv("PASSWORD")
+	authEnabled := os.Getenv("AUTH_ENABLED") == "true"
+
+	// Create a custom middleware to check the request's Host header
+	middlewareFunc := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if authEnabled {
+				host := c.Request().Host
+				if !contains(trustedHosts, host) {
+					return echo.NewHTTPError(http.StatusForbidden, "Forbidden")
+				}
+			}
+			return next(c)
+		}
+	}
+	// Create a middleware to authenticate the user using basic auth
+	authMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if username != "" && password != "" {
+				user, pass, ok := c.Request().BasicAuth()
+				if !ok || user != username || pass != password {
+					return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
+				}
+			}
+			return next(c)
+		}
+	}
+
+	e.GET("/rss/:youtubePlaylistId", middlewareFunc(authMiddleware(func(c echo.Context) error {
 		data := services.BuildRssFeed(env.db, c, c.Param("youtubePlaylistId"))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
 		return c.Blob(http.StatusOK, "application/rss+xml; charset=utf-8", data)
-	})
+	})))
 
-	e.Match([]string{"GET", "HEAD"}, "/media/:youtubeVideoId", func(c echo.Context) error {
+	e.Match([]string{"GET", "HEAD"}, "/media/:youtubeVideoId", middlewareFunc(authMiddleware(func(c echo.Context) error {
 		fileName, done := services.GetYoutubeVideo(c.Param("youtubeVideoId"))
 		<-done
 
@@ -81,7 +115,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		}
 
 		return c.Stream(http.StatusOK, "audio/mp4", bytes.NewReader(fileBytes))
-	})
+	})))
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -92,4 +126,13 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 	log.Info("Starting server on " + host + ": " + port)
 	e.Logger.Fatal(e.Start(host + ":" + port))
 
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }
