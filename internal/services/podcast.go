@@ -15,7 +15,7 @@ var (
 
 var UNAVAILABLE_STATUSES = []string{"private", "privacyStatusUnspecified"}
 
-func BuildRssFeed(db *gorm.DB, c echo.Context, youtubePlaylistId string) error {
+func BuildRssFeed(db *gorm.DB, c echo.Context, youtubePlaylistId string) []byte {
 	log.Info("[RSS FEED] Building rss feed...")
 	ytData := getYoutubeData(youtubePlaylistId)
 	podcastRss := buildMainPodcast(ytData)
@@ -31,12 +31,14 @@ func buildMainPodcast(allItems []*youtube.PlaylistItem) models.Podcast {
 	return models.Podcast{
 		AppleId:          closestApplePodcastData.CollectionId,
 		YoutubePodcastId: item.Snippet.PlaylistId,
-		PodcastName:      item.Snippet.ChannelTitle,
+		PodcastName:      closestApplePodcastData.TrackName,
 		Description:      item.Snippet.Description,
 		Category:         closestApplePodcastData.PrimaryGenreName,
 		Language:         "en",
 		PostedDate:       closestApplePodcastData.ReleaseDate,
 		ImageUrl:         closestApplePodcastData.ArtworkUrl100,
+		ArtistName:       closestApplePodcastData.ArtistName,
+		Explicit:         closestApplePodcastData.ContentAdvisoryRating,
 		PodcastEpisodes:  buildPodcastEpisodes(allItems),
 	}
 }

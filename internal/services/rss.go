@@ -15,22 +15,15 @@ import (
 
 const rssUrl = "/rss/youtubePlaylistId="
 
-func GenerateRssFeed(podcast models.Podcast, c echo.Context) error {
+func GenerateRssFeed(podcast models.Podcast, c echo.Context) []byte {
 	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
-
-	atomLink := &AtomLink{
-		XMLName: xml.Name{Space: "http://www.w3.org/2005/Atom", Local: "link"},
-		HREF:    "https://example.com",
-		Rel:     "self",
-		Type:    "application/rss+xml",
-	}
 
 	now := time.Now()
 	ytPodcast := New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.YoutubePodcastId, podcast.Description, &now, &now)
 	ytPodcast.AddImage(transformArtworkURL(podcast.ImageUrl, 3000, 3000))
-	ytPodcast.AtomLink = atomLink
 	ytPodcast.AddCategory(podcast.Category, []string{""})
 	ytPodcast.IExplicit = "true"
+	ytPodcast.Docs = "http://www.rssboard.org/rss-specification"
 
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {
@@ -54,13 +47,9 @@ func GenerateRssFeed(podcast models.Podcast, c echo.Context) error {
 			}
 			ytPodcast.AddItem(podcastItem)
 		}
-
-		err := ytPodcast.Encode(c.Response().Writer)
-		if err != nil {
-			return err
-		}
 	}
-	return c.NoContent(http.StatusOK)
+
+	return ytPodcast.Bytes()
 }
 
 func handler(r *http.Request) string {

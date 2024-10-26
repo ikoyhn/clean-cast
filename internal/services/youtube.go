@@ -3,16 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	log "github.com/labstack/gommon/log"
 	"github.com/lrstanley/go-ytdlp"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"os"
-	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -70,27 +67,10 @@ func cleanPlaylistItems(items []*youtube.PlaylistItem) []*youtube.PlaylistItem {
 }
 
 // When client requests a podcast from the RSS feed use yt-dlp to download the file then serve it
-func GetYoutubeVideo(youtubeVideoId string, c echo.Context) error {
+func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	filePath := "/config/" + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
-		// File exists, serve it directly
-		if c.Request().Method == echo.HEAD {
-			// Handle HEAD request
-			file, err := os.Open(filePath)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-			fileInfo, err := file.Stat()
-			if err != nil {
-				return err
-			}
-			c.Response().Header().Set("Content-Type", "audio/mpeg")
-			c.Response().Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-			c.Response().WriteHeader(http.StatusOK)
-			return nil
-		}
-		return c.Stream(200, "audio/mp4", getFile(youtubeVideoId))
+		return youtubeVideoId, make(chan struct{})
 	}
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
 	ytdlp.MustInstall(context.TODO(), nil)
@@ -115,38 +95,17 @@ func GetYoutubeVideo(youtubeVideoId string, c echo.Context) error {
 		}).
 		Output(youtubeVideoId + ".%(ext)s")
 
-	r, err := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
-	if err != nil {
-		panic(err)
-	}
-	if r.ExitCode != 0 {
-		panic(r)
-	}
-
-	if c.Request().Method == echo.HEAD {
-		// Handle HEAD request
-		file, err := os.Open(filePath)
+	done := make(chan struct{})
+	go func() {
+		r, err := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
 		if err != nil {
-			return err
+			// handle error
 		}
-		defer file.Close()
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return err
+		if r.ExitCode != 0 {
+			// handle error
 		}
-		c.Response().Header().Set("Content-Type", "audio/mpeg")
-		c.Response().Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-		c.Response().WriteHeader(http.StatusOK)
-		return nil
-	}
-	return c.Stream(200, "audio/mp4", getFile(youtubeVideoId))
-}
+		close(done)
+	}()
 
-func getFile(youtubeVideoId string) *os.File {
-	file, err := os.Open(filepath.Join("/config/", youtubeVideoId+".m4a"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	return file
+	return youtubeVideoId, done
 }

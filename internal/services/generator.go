@@ -16,14 +16,6 @@ const (
 	pVersion = "1.3.1"
 )
 
-// AtomLink represents the Atom reference link.
-type AtomLink struct {
-	XMLName xml.Name `xml:"atom:link"`
-	HREF    string   `xml:"href,attr"`
-	Rel     string   `xml:"rel,attr"`
-	Type    string   `xml:"type,attr"`
-}
-
 type Author struct {
 	XMLName xml.Name `xml:"itunes:owner"`
 	Name    string   `xml:"itunes:name"`
@@ -146,7 +138,6 @@ type Item struct {
 	IAuthor            string `xml:"itunes:author,omitempty"`
 	ISubtitle          string `xml:"itunes:subtitle,omitempty"`
 	ISummary           *ISummary
-	IImage             *IImage
 	IDuration          string `xml:"itunes:duration,omitempty"`
 	IExplicit          string `xml:"itunes:explicit,omitempty"`
 	IIsClosedCaptioned string `xml:"itunes:isClosedCaptioned,omitempty"`
@@ -160,21 +151,6 @@ func (i *Item) AddEnclosure(
 		URL:    url,
 		Type:   enclosureType,
 		Length: lengthInBytes,
-	}
-}
-
-// AddImage adds the image as an iTunes-only IImage.  RSS 2.0 does not have
-// the specification of Images at the Item level.
-//
-// Podcast feeds contain artwork that is a minimum size of
-// 1400 x 1400 pixels and a maximum size of 3000 x 3000 pixels,
-// 72 dpi, in JPEG or PNG format with appropriate file
-// extensions (.jpg, .png), and in the RGB colorspace. To optimize
-// images for mobile devices, Apple recommends compressing your
-// image files.
-func (i *Item) AddImage(url string) {
-	if len(url) > 0 {
-		i.IImage = &IImage{HREF: url}
 	}
 }
 
@@ -256,19 +232,6 @@ type ICategory struct {
 	ICategories []*ICategory
 }
 
-// IImage represents an iTunes image.
-//
-// Podcast feeds contain artwork that is a minimum size of
-// 1400 x 1400 pixels and a maximum size of 3000 x 3000 pixels,
-// 72 dpi, in JPEG or PNG format with appropriate file
-// extensions (.jpg, .png), and in the RGB colorspace. To optimize
-// images for mobile devices, Apple recommends compressing your
-// image files.
-type IImage struct {
-	XMLName xml.Name `xml:"itunes:image"`
-	HREF    string   `xml:"href,attr"`
-}
-
 // ISummary is a 4000 character rich-text field for the itunes:summary tag.
 //
 // This is rendered as CDATA which allows for HTML tags such as `<a href="">`.
@@ -299,14 +262,12 @@ type Podcast struct {
 	WebMaster      string   `xml:"webMaster,omitempty"`
 	Image          *Image
 	TextInput      *TextInput
-	AtomLink       *AtomLink
 
 	// https://help.apple.com/itc/podcasts_connect/#/itcb54353390
 	IAuthor     string `xml:"itunes:author,omitempty"`
 	ISubtitle   string `xml:"itunes:subtitle,omitempty"`
 	ISummary    *ISummary
-	IBlock      string `xml:"itunes:block,omitempty"`
-	IImage      *IImage
+	IBlock      string  `xml:"itunes:block,omitempty"`
 	IDuration   string  `xml:"itunes:duration,omitempty"`
 	IExplicit   string  `xml:"itunes:explicit,omitempty"`
 	IComplete   string  `xml:"itunes:complete,omitempty"`
@@ -358,18 +319,6 @@ func (p *Podcast) AddAuthor(name, email string) {
 		Email: email,
 	})
 	p.IAuthor = p.ManagingEditor
-}
-
-// AddAtomLink adds a FQDN reference to an atom feed.
-func (p *Podcast) AddAtomLink(href string) {
-	if len(href) == 0 {
-		return
-	}
-	p.AtomLink = &AtomLink{
-		HREF: href,
-		Rel:  "self",
-		Type: "application/rss+xml",
-	}
 }
 
 // AddCategory adds the category to the Podcast.
@@ -490,7 +439,6 @@ func (p *Podcast) AddImage(url string) {
 		Title: p.Title,
 		Link:  p.Link,
 	}
-	p.IImage = &IImage{HREF: url}
 }
 
 // AddItem adds the podcast episode.  It returns a count of Items added or any
@@ -590,11 +538,6 @@ func (p *Podcast) AddItem(i Item) (int, error) {
 			i.IAuthor = p.ManagingEditor
 		}
 	}
-	if i.IImage == nil {
-		if p.Image != nil {
-			i.IImage = &IImage{HREF: p.Image.URL}
-		}
-	}
 
 	p.Items = append(p.Items, &i)
 	return len(p.Items), nil
@@ -658,19 +601,15 @@ func (p *Podcast) Bytes() []byte {
 
 // Encode writes the bytes to the io.Writer stream in RSS 2.0 specification.
 func (p *Podcast) Encode(w io.Writer) error {
-	if _, err := w.Write([]byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")); err != nil {
+	if _, err := w.Write([]byte("<?xml version='1.0' encoding=\"UTF-8\"?>\n")); err != nil {
 		return errors.Wrap(err, "podcast.Encode: w.Write return error")
 	}
 
-	atomLink := ""
-	if p.AtomLink != nil {
-		atomLink = "http://www.w3.org/2005/Atom"
-	}
 	wrapped := podcastWrapper{
-		ITUNESNS:  "http://www.itunes.com/dtds/podcast-1.0.dtd",
-		ATOMNS:    atomLink,
-		CONTENTNS: "http://purl.org/rss/1.0/modules/content/",
 		Version:   "2.0",
+		ITUNESNS:  "http://www.itunes.com/dtds/podcast-1.0.dtd",
+		ATOMNS:    "http://www.w3.org/2005/Atom",
+		CONTENTNS: "http://purl.org/rss/1.0/modules/content/",
 		Channel:   p,
 	}
 	return p.encode(w, wrapped)

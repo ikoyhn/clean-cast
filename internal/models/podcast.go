@@ -19,4 +19,6 @@ type Podcast struct {
 	ImageUrl         string           `json:"image_url"`
 	LastBuildDate    string           `json:"last_build_date"`
 	PodcastEpisodes  []PodcastEpisode `json:"podcast_episodes"`
+	ArtistName       string           `json:"artist_name"`
+	Explicit         string           `json:"explicit"`
 }

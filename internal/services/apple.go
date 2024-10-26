@@ -76,4 +76,6 @@ type AppleResult struct {
 	ContentAdvisoryRating string `json:"contentAdvisoryRating"`
 	ArtworkUrl100         string `json:"artworkUrl100"`
 	ReleaseDate           string `json:"releaseDate"`
+	TrackName             string `json:"trackName"`
+	ArtistName            string `json:"artistName"`
 }
