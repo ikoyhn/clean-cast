@@ -46,7 +46,8 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		c.Response().Header().Del("Transfer-Encoding")
 		return c.Blob(http.StatusOK, "application/rss+xml; charset=utf-8", data)
 	})
-	e.GET("/media/:youtubeVideoId", func(c echo.Context) error {
+
+	e.Match([]string{"GET", "HEAD"}, "/media/:youtubeVideoId", func(c echo.Context) error {
 		fileName, done := services.GetYoutubeVideo(c.Param("youtubeVideoId"))
 		<-done
 
@@ -59,6 +60,18 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		fileInfo, err := file.Stat()
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to retrieve file info")
+		}
+
+		c.Response().Header().Set("Connection", "close")
+		c.Response().Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s", fileName+".m4a"))
+		c.Response().Header().Set("Content-Type", "audio/mp4")
+		c.Response().Header().Set("Content-Length", strconv.Itoa(int(fileInfo.Size())))
+		c.Response().Header().Set("Last-Modified", fileInfo.ModTime().Format(time.RFC1123))
+		c.Response().Header().Set("Cache-Control", "no-cache")
+		c.Response().Header().Set("ETag", strconv.FormatInt(fileInfo.ModTime().UnixNano(), 10))
+
+		if c.Request().Method == "HEAD" {
+			return nil
 		}
 
 		fileBytes := make([]byte, fileInfo.Size())
@@ -67,36 +80,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to read file")
 		}
 
-		c.Response().Header().Set("Connection", "close")
-		c.Response().Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s", fileName+".m4a"))
-		c.Response().Header().Set("Content-Type", "audio/mp4")
-		c.Response().Header().Set("Content-Length", strconv.Itoa(int(fileInfo.Size())))
-		c.Response().Header().Set("Last-Modified", fileInfo.ModTime().Format(time.RFC1123))
-		c.Response().Header().Set("Cache-Control", "no-cache")
-		c.Response().Header().Set("ETag", strconv.FormatInt(fileInfo.ModTime().UnixNano(), 10))
 		return c.Stream(http.StatusOK, "audio/mp4", bytes.NewReader(fileBytes))
-	})
-	e.HEAD("/media/:youtubeVideoId", func(c echo.Context) error {
-		fileName, done := services.GetYoutubeVideo(c.Param("youtubeVideoId"))
-		<-done
-		file, err := os.Open("/config/" + fileName + ".m4a")
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to open file: /config/"+fileName+".m4a")
-		}
-		defer file.Close()
-
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to retrieve file info")
-		}
-
-		c.Response().Header().Set("Connection", "close")
-		c.Response().Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s", fileName+".m4a"))
-		c.Response().Header().Set("Content-Type", "audio/mp4")
-		c.Response().Header().Set("Content-Length", strconv.Itoa(int(fileInfo.Size())))
-		c.Response().Header().Set("ETag", strconv.FormatInt(fileInfo.ModTime().UnixNano(), 10))
-		c.Response().Header().Set("Last-Modified", fileInfo.ModTime().Format(time.RFC1123))
-		return c.NoContent(http.StatusOK)
 	})
 
 	port := os.Getenv("PORT")
