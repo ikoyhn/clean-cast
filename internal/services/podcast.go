@@ -2,7 +2,6 @@ package services
 
 import (
 	"flag"
-	"github.com/labstack/echo/v4"
 	log "github.com/labstack/gommon/log"
 	"google.golang.org/api/youtube/v3"
 	"gorm.io/gorm"
@@ -15,11 +14,11 @@ var (
 
 var UNAVAILABLE_STATUSES = []string{"private", "privacyStatusUnspecified"}
 
-func BuildRssFeed(db *gorm.DB, c echo.Context, youtubePlaylistId string) []byte {
+func BuildRssFeed(db *gorm.DB, youtubePlaylistId string, host string) []byte {
 	log.Info("[RSS FEED] Building rss feed...")
 	ytData := getYoutubeData(youtubePlaylistId)
 	podcastRss := buildMainPodcast(ytData)
-	return GenerateRssFeed(podcastRss, c)
+	return GenerateRssFeed(podcastRss, host)
 }
 
 func buildMainPodcast(allItems []*youtube.PlaylistItem) models.Podcast {

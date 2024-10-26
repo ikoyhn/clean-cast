@@ -3,10 +3,8 @@ package services
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	log "github.com/labstack/gommon/log"
 	"ikoyhn/podcast-sponsorblock/internal/models"
-	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -15,7 +13,7 @@ import (
 
 const rssUrl = "/rss/youtubePlaylistId="
 
-func GenerateRssFeed(podcast models.Podcast, c echo.Context) []byte {
+func GenerateRssFeed(podcast models.Podcast, host string) []byte {
 	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
 
 	now := time.Now()
@@ -28,7 +26,7 @@ func GenerateRssFeed(podcast models.Podcast, c echo.Context) []byte {
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {
 			enclosure := Enclosure{
-				URL:    handler(c.Request()) + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a",
+				URL:    host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a",
 				Length: 0,
 				Type:   M4A,
 			}
@@ -50,18 +48,6 @@ func GenerateRssFeed(podcast models.Podcast, c echo.Context) []byte {
 	}
 
 	return ytPodcast.Bytes()
-}
-
-func handler(r *http.Request) string {
-	var scheme string
-	if r.TLS != nil {
-		scheme = "https"
-	} else {
-		scheme = "http"
-	}
-	host := r.Host
-	url := scheme + "://" + host
-	return url
 }
 
 func transformArtworkURL(artworkURL string, newHeight int, newWidth int) string {
