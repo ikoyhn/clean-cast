@@ -68,10 +68,12 @@ func cleanPlaylistItems(items []*youtube.PlaylistItem) []*youtube.PlaylistItem {
 
 // When client requests a podcast from the RSS feed use yt-dlp to download the file then serve it
 func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
+	log.Info("[YTDLP] Checking for video...")
 	filePath := "/config/" + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
 		return youtubeVideoId, make(chan struct{})
 	}
+	log.Info("[YTDLP] Video not found, downloading...")
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
 	ytdlp.Install(context.TODO(), nil)
 
