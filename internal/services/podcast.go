@@ -16,30 +16,37 @@ var UNAVAILABLE_STATUSES = []string{"private", "privacyStatusUnspecified"}
 
 func BuildRssFeed(db *gorm.DB, youtubePlaylistId string, host string) []byte {
 	log.Info("[RSS FEED] Building rss feed...")
+
 	ytData := getYoutubeData(youtubePlaylistId)
-	podcastRss := buildMainPodcast(ytData)
-	return GenerateRssFeed(podcastRss, host)
+	allItems := cleanPlaylistItems(ytData)
+	item := allItems[0]
+	closestApplePodcastData := getAppleData(item, allItems)
+
+	podcastRss := buildMainPodcast(ytData, closestApplePodcastData)
+	return GenerateRssFeed(podcastRss, closestApplePodcastData, host)
 }
 
-func buildMainPodcast(allItems []*youtube.PlaylistItem) models.Podcast {
-	allItems = cleanPlaylistItems(allItems)
+func buildMainPodcast(allItems []*youtube.PlaylistItem, appleData AppleResult) models.Podcast {
 	item := allItems[0]
-	itunesResponse := GetApplePodcastData(item.Snippet.ChannelTitle)
-	closestApplePodcastData := findClosestResult(itunesResponse.Results, len(allItems))
-
 	return models.Podcast{
-		AppleId:          closestApplePodcastData.CollectionId,
+		AppleId:          appleData.CollectionId,
 		YoutubePodcastId: item.Snippet.PlaylistId,
-		PodcastName:      closestApplePodcastData.TrackName,
+		PodcastName:      appleData.TrackName,
 		Description:      item.Snippet.Description,
-		Category:         closestApplePodcastData.PrimaryGenreName,
+		Category:         appleData.PrimaryGenreName,
 		Language:         "en",
-		PostedDate:       closestApplePodcastData.ReleaseDate,
-		ImageUrl:         closestApplePodcastData.ArtworkUrl100,
-		ArtistName:       closestApplePodcastData.ArtistName,
-		Explicit:         closestApplePodcastData.ContentAdvisoryRating,
+		PostedDate:       appleData.ReleaseDate,
+		ImageUrl:         appleData.ArtworkUrl100,
+		ArtistName:       appleData.ArtistName,
+		Explicit:         appleData.ContentAdvisoryRating,
 		PodcastEpisodes:  buildPodcastEpisodes(allItems),
 	}
+}
+
+func getAppleData(item *youtube.PlaylistItem, allItems []*youtube.PlaylistItem) AppleResult {
+	itunesResponse := GetApplePodcastData(item.Snippet.ChannelTitle)
+	closestApplePodcastData := findClosestResult(itunesResponse.Results, len(allItems))
+	return closestApplePodcastData
 }
 
 func buildPodcastEpisodes(allItems []*youtube.PlaylistItem) []models.PodcastEpisode {
@@ -50,6 +57,7 @@ func buildPodcastEpisodes(allItems []*youtube.PlaylistItem) []models.PodcastEpis
 			EpisodeName:        item.Snippet.Title,
 			EpisodeDescription: item.Snippet.Description,
 			Position:           item.Snippet.Position,
+			PublishedDate:      item.Snippet.PublishedAt,
 		}
 		podcastEpisodes = append(podcastEpisodes, tempPodcast)
 
