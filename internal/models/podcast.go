@@ -14,7 +14,6 @@ type Podcast struct {
 	PodcastName      string           `json:"podcast_name"`
 	Description      string           `json:"description"`
 	Category         string           `json:"category"`
-	Language         string           `json:"language"`
 	PostedDate       string           `json:"posted_date"`
 	ImageUrl         string           `json:"image_url"`
 	LastBuildDate    string           `json:"last_build_date"`

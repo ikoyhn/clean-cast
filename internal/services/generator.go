@@ -45,7 +45,7 @@ func (et EnclosureType) String() string {
 	// https://help.apple.com/itc/podcasts_connect/#/itcb54353390
 	switch et {
 	case M4A:
-		return "audio/x-m4a"
+		return "audio/mp4"
 	case M4V:
 		return "video/x-m4v"
 	case MP4:
@@ -120,13 +120,16 @@ type Image struct {
 // - Always set an Enclosure.Length, to be nice to your downloaders.
 // - Use Enclosure.Type instead of setting TypeFormatted for valid extensions.
 type Item struct {
-	XMLName          xml.Name   `xml:"item"`
-	GUID             string     `xml:"guid"`
+	XMLName xml.Name `xml:"item"`
+	GUID    struct {
+		Value       string `xml:",chardata"`
+		IsPermaLink bool   `xml:"isPermaLink,attr"`
+	} `xml:"guid"`
 	Title            string     `xml:"title"`
-	Link             string     `xml:"link"`
+	Link             string     `xml:"link,omitempty"`
 	Description      string     `xml:"description"`
-	Author           *Author    `xml:"-"`
-	AuthorFormatted  string     `xml:"author,omitempty"`
+	Author           string     `xml:"author,omitempty"`
+	AuthorFormatted  string     `xml:"authorFormatted,omitempty"`
 	Category         string     `xml:"category,omitempty"`
 	Comments         string     `xml:"comments,omitempty"`
 	Source           string     `xml:"source,omitempty"`
@@ -293,16 +296,13 @@ type TextInput struct {
 //
 // Nil-able fields are optional but recommended as they are formatted
 // to the expected proper formats.
-func New(title, link, description string,
-	pubDate, lastBuildDate *time.Time) Podcast {
+func New(title, link, description string, lastBuildDate *time.Time) Podcast {
 	return Podcast{
 		Title:         title,
 		Link:          link,
 		Description:   description,
 		Generator:     fmt.Sprintf("go podcast v%s (github.com/eduncan911/podcast)", pVersion),
-		PubDate:       parseDateRFC1123Z(pubDate),
 		LastBuildDate: parseDateRFC1123Z(lastBuildDate),
-		Language:      "en-us",
 
 		// setup dependency (could inject later)
 		encode: encoder,
@@ -503,39 +503,21 @@ func (p *Podcast) AddItem(i Item) (int, error) {
 	// corrective actions and overrides
 	//
 	i.PubDateFormatted = parseDateRFC1123Z(i.PubDate)
-	i.AuthorFormatted = parseAuthorNameEmail(i.Author)
 	if i.Enclosure != nil {
-		if len(i.GUID) == 0 {
-			i.GUID = i.Enclosure.URL // yep, GUID is the Permlink URL
-		}
 
 		if i.Enclosure.Length < 0 {
 			i.Enclosure.Length = 0
 		}
 		i.Enclosure.LengthFormatted = strconv.FormatInt(i.Enclosure.Length, 10)
 		i.Enclosure.TypeFormatted = i.Enclosure.Type.String()
-
-		// allow Link to be set for article references to Downloads,
-		// otherwise set it to the enclosurer's URL.
-		if len(i.Link) == 0 {
-			i.Link = i.Enclosure.URL
-		}
-	} else {
-		i.GUID = i.Link // yep, GUID is the Permlink URL
 	}
 
 	// iTunes it
 	//
 	if len(i.IAuthor) == 0 {
 		switch {
-		case i.Author != nil:
-			i.IAuthor = i.Author.Email
-		case len(p.IAuthor) != 0:
-			i.Author = &Author{Email: p.IAuthor}
-			i.IAuthor = p.IAuthor
-		case len(p.ManagingEditor) != 0:
-			i.Author = &Author{Email: p.ManagingEditor}
-			i.IAuthor = p.ManagingEditor
+		case i.Author != "":
+			i.IAuthor = i.Author
 		}
 	}
 
