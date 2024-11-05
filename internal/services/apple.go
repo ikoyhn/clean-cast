@@ -3,11 +3,12 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/labstack/gommon/log"
 	"io"
 	"math"
 	"net/http"
 	"strings"
+
+	log "github.com/labstack/gommon/log"
 )
 
 const itunesSearchUrl = "https://itunes.apple.com/search?term=%s&limit=1&media=podcast&callback="
@@ -46,20 +47,13 @@ func findClosestResult(results []AppleResult, target int) AppleResult {
 	minDiff := math.MaxInt32
 
 	for _, result := range results {
-		diff := abs(result.TrackCount - target)
+		diff := int(math.Abs(float64(result.TrackCount - target)))
 		if diff < minDiff {
 			minDiff = diff
 			closest = result
 		}
 	}
 	return closest
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }
 
 type LookupResponse struct {

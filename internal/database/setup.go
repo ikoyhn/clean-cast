@@ -1,4 +1,4 @@
-package setup
+package database
 
 import (
 	"ikoyhn/podcast-sponsorblock/internal/models"
@@ -7,18 +7,17 @@ import (
 	"gorm.io/gorm"
 )
 
-func ConnectDatabase() (*gorm.DB, error) {
+var db *gorm.DB
 
-	database, err := gorm.Open(sqlite.Open("sqlite.db"), &gorm.Config{})
-
+func ConnectDatabase() {
+	var err error
+	db, err = gorm.Open(sqlite.Open("sqlite.db"), &gorm.Config{})
 	if err != nil {
-		panic("Failed to connect to database!")
+		panic(err)
 	}
 
-	err = database.AutoMigrate(&models.PodcastEpisode{})
+	err = db.AutoMigrate(&models.EpisodePlaybackHistory{})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-
-	return database, nil
 }

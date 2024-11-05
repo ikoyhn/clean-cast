@@ -2,17 +2,22 @@ package services
 
 import (
 	"flag"
+	"ikoyhn/podcast-sponsorblock/internal/models"
+
 	log "github.com/labstack/gommon/log"
 	"google.golang.org/api/youtube/v3"
 	"gorm.io/gorm"
-	"ikoyhn/podcast-sponsorblock/internal/models"
 )
+
+type Env struct {
+	db *gorm.DB
+}
 
 var (
 	maxResults = flag.Int64("max-results", 50, "Max YouTube results")
 )
 
-func BuildRssFeed(db *gorm.DB, youtubePlaylistId string, host string) []byte {
+func BuildRssFeed(youtubePlaylistId string, host string) []byte {
 	log.Info("[RSS FEED] Building rss feed...")
 
 	ytData := getYoutubeData(youtubePlaylistId)

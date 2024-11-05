@@ -3,15 +3,16 @@ package services
 import (
 	"context"
 	"fmt"
-	log "github.com/labstack/gommon/log"
-	"github.com/lrstanley/go-ytdlp"
-	"google.golang.org/api/option"
-	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/labstack/gommon/log"
+	"github.com/lrstanley/go-ytdlp"
+	"google.golang.org/api/option"
+	"google.golang.org/api/youtube/v3"
 )
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="

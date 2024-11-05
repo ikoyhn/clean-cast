@@ -2,17 +2,19 @@ package app
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	log "github.com/labstack/gommon/log"
-	"github.com/lrstanley/go-ytdlp"
-	"gorm.io/gorm"
-	setup "ikoyhn/podcast-sponsorblock/internal/database"
+	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	log "github.com/labstack/gommon/log"
+	"github.com/lrstanley/go-ytdlp"
+	"github.com/robfig/cron"
+	"gorm.io/gorm"
 )
 
 type Env struct {
@@ -23,18 +25,20 @@ func Start() {
 
 	ytdlp.MustInstall(context.TODO(), nil)
 
-	db, err := setup.ConnectDatabase()
-	if err != nil {
-		log.Panic(err)
-	}
-	env := &Env{db: db}
-
+	database.ConnectDatabase()
 	e := echo.New()
+	database.TrackEpisodeFiles()
+
+	c := cron.New()
+	c.AddFunc("*/5 * * * * *", func() {
+		database.DeletePodcastCronJob()
+	})
+	c.Start()
 
 	// Create a custom logger middleware
 	setupLogging(e)
 	setupHandlers(e)
-	env.registerRoutes(e)
+	registerRoutes(e)
 }
 
 func setupLogging(e *echo.Echo) {
@@ -49,9 +53,9 @@ func setupLogging(e *echo.Echo) {
 	}
 }
 
-func (env *Env) registerRoutes(e *echo.Echo) {
+func registerRoutes(e *echo.Echo) {
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
-		data := services.BuildRssFeed(env.db, c.Param("youtubePlaylistId"), handler(c.Request()))
+		data := services.BuildRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
@@ -62,6 +66,7 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 		fileId := c.Param("youtubeVideoId")
 		file, err := os.Open("/config/audio/" + fileId)
 		if file == nil || err != nil {
+			database.UpdateEpisodePlaybackHistory(fileId[:len(fileId)-4])
 			fileName, done := services.GetYoutubeVideo(fileId)
 			<-done
 			file, err = os.Open("/config/audio/" + fileName + ".m4a")
@@ -84,30 +89,6 @@ func (env *Env) registerRoutes(e *echo.Echo) {
 			return nil
 		}
 		return c.Stream(http.StatusOK, "audio/mp4", file)
-	})
-
-	e.HEAD("/media/:youtubeVideoId", func(c echo.Context) error {
-		fileId := c.Param("youtubeVideoId")
-		file, err := os.Open("/config/audio/" + fileId)
-		if file == nil || err != nil {
-			fileName, done := services.GetYoutubeVideo(fileId)
-			<-done
-			fileId = fileName
-			file, err := os.Open("/config/audio/" + fileName + ".m4a")
-			if err != nil || file == nil {
-				return err
-			}
-		}
-
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return err
-		}
-
-		c.Response().Header().Set("Accept-Ranges", "bytes")
-		c.Response().Header().Set("Content-Type", "audio/mp4")
-		c.Response().Header().Set("Content-Length", strconv.Itoa(int(fileInfo.Size())))
-		return nil
 	})
 
 	port := os.Getenv("PORT")

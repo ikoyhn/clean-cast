@@ -8,6 +8,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/lrstanley/go-ytdlp v0.0.0-20241009011144-88433fef3229
 	github.com/pkg/errors v0.9.1
+	github.com/robfig/cron v1.2.0
 	google.golang.org/api v0.200.0
 	gorm.io/gorm v1.25.12
 )
