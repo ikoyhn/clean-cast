@@ -1,9 +1,5 @@
 package models
 
-import (
-	"time"
-)
-
 type PodcastEpisode struct {
 	YoutubeVideoId     string `json:"youtube_video_id" gorm:"primary_key"`
 	EpisodeName        string `json:"episode_name"`
@@ -27,6 +23,6 @@ type Podcast struct {
 }
 
 type EpisodePlaybackHistory struct {
-	YoutubeVideoId string    `json:"youtube_video_id" gorm:"primary_key"`
-	LastAccessDate time.Time `json:"last_access_date"`
+	YoutubeVideoId string `json:"youtube_video_id" gorm:"primary_key"`
+	LastAccessDate int64  `json:"last_access_date"`
 }

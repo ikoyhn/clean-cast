@@ -24,13 +24,16 @@ type Env struct {
 func Start() {
 
 	ytdlp.MustInstall(context.TODO(), nil)
-
-	database.ConnectDatabase()
 	e := echo.New()
+
+	log.Info("[APP] Starting...")
+	log.Info("[DB] Connecting...")
+	database.ConnectDatabase()
+
 	database.TrackEpisodeFiles()
 
 	c := cron.New()
-	c.AddFunc("*/5 * * * * *", func() {
+	c.AddFunc("0 0 * * 0", func() {
 		database.DeletePodcastCronJob()
 	})
 	c.Start()
