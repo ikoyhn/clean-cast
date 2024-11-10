@@ -2,7 +2,7 @@
 
   
 
-This is a GO application that will take any podcast that is on Youtube and will generate a RSS feed with the audio only and all sponsored sections auto removed. The actual podcasts episodes are downloaded on demand from youtube when the user requests the specific episode then it is served to the user seamlessly.
+This is a GO application that will take any podcast that is on Youtube and will generate a RSS feed with the audio only and all sponsored sections auto removed. The actual podcasts episodes are downloaded on demand from youtube when the user requests the specific episode then it is served to the user seamlessly. By default a CRON job is run weekly to delete any episode files that havent been accessed in over a week, this can be modified with docker variables
 
   
 
@@ -20,6 +20,7 @@ This app uses the following
 | `-e GOOGLE_API_KEY=<api key>` | YouTube v3 API Key | Yes |
 | `-e TOKEN=<secure key>` | Used for securing the endpoints. If using this you must add the query param `token` to the end of the URL for the `/rss` endpoint request ex.`?token=mySecureToken` | No |
 | `-e TRUSTED_HOSTS=<list of hosts>` | If you want to limit what host this service can be called from. Can be a list of hosts separated by a `,` Ex: `localhost:8080,https://podcast.com` | No |
+| `-e CRON` | By default a cron job will be run weekly to delete any podcast episode files that havent been access in over a week, if you want to modify when this runs you can set the cron here | No |
 
 ## Docker Run Command Templates
 > Docker run command (only required parameters)
@@ -28,7 +29,7 @@ This app uses the following
     
 > Docker run command (all parameters)
 
-    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /config:/<audio download path here> -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> ikoyhn/go-podcast-sponsor-block
+    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /config:/<audio download path here> -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0"  ikoyhn/go-podcast-sponsor-block
 
 
   

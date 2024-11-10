@@ -15,12 +15,7 @@ import (
 	log "github.com/labstack/gommon/log"
 	"github.com/lrstanley/go-ytdlp"
 	"github.com/robfig/cron"
-	"gorm.io/gorm"
 )
-
-type Env struct {
-	db *gorm.DB
-}
 
 func Start() {
 
@@ -58,7 +53,6 @@ func registerRoutes(e *echo.Echo) {
 			<-done
 			file, err = os.Open("/config/audio/" + fileName + ".m4a")
 			if err != nil || file == nil {
-
 				return err
 			}
 			defer file.Close()
