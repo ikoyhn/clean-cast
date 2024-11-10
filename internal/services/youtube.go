@@ -88,10 +88,6 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	// Check if the file is already being processed
 	filePath := "/config/audio/" + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
-		// is being processed or already exists, it returns immediately. Otherwise, it
-		// proceeds to download the video as an audio file. The download process
-		// removes sponsor segments using SponsorBlock and converts the video to M4A
-		// format.
 		mutex.(*sync.Mutex).Unlock()
 		return youtubeVideoId, make(chan struct{})
 	}

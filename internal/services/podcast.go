@@ -2,7 +2,10 @@ package services
 
 import (
 	"flag"
+	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
+	"math"
+	"os"
 
 	log "github.com/labstack/gommon/log"
 	"google.golang.org/api/youtube/v3"
@@ -64,4 +67,21 @@ func buildPodcastEpisodes(allItems []*youtube.PlaylistItem) []models.PodcastEpis
 
 	}
 	return podcastEpisodes
+}
+
+func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
+	episodeHistory := database.GetEpisodePlaybackHistory(youtubeVideoId)
+
+	updatedSkippedTime := TotalSponsorTimeSkipped(youtubeVideoId)
+	if episodeHistory == nil {
+		return true, updatedSkippedTime
+	}
+
+	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
+		os.Remove("/config/audio/" + youtubeVideoId + ".m4a")
+		log.Info("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
+		return true, updatedSkippedTime
+	}
+
+	return false, updatedSkippedTime
 }

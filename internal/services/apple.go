@@ -11,12 +11,12 @@ import (
 	log "github.com/labstack/gommon/log"
 )
 
-const itunesSearchUrl = "https://itunes.apple.com/search?term=%s&limit=1&media=podcast&callback="
+const ITUNES_SEARCH_URL = "https://itunes.apple.com/search?term=%s&limit=1&media=podcast&callback="
 
 // Apple API lookup for podcast metadata
 func GetApplePodcastData(podcastName string) LookupResponse {
 	log.Info("[RSS FEED] Looking up podcast in Apple Search API...")
-	resp, err := http.Get(fmt.Sprintf(itunesSearchUrl, strings.ReplaceAll(podcastName, " ", "")))
+	resp, err := http.Get(fmt.Sprintf(ITUNES_SEARCH_URL, strings.ReplaceAll(podcastName, " ", "")))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,14 +24,14 @@ func GetApplePodcastData(podcastName string) LookupResponse {
 	if bodyErr != nil {
 		log.Fatal(bodyErr)
 	}
-	lookupResponse, marshErr := unmarshalLookupResponse(body)
+	lookupResponse, marshErr := unmarshalAppleLookupResponse(body)
 	if marshErr != nil {
 		log.Fatal(marshErr)
 	}
 	return lookupResponse
 }
 
-func unmarshalLookupResponse(data []byte) (LookupResponse, error) {
+func unmarshalAppleLookupResponse(data []byte) (LookupResponse, error) {
 	var res LookupResponse
 
 	if err := json.Unmarshal(data, &res); err != nil {
