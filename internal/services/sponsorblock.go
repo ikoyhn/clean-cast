@@ -2,26 +2,37 @@ package services
 
 import (
 	"encoding/json"
-	log "github.com/labstack/gommon/log"
 	"io"
 	"net/http"
+
+	log "github.com/labstack/gommon/log"
 )
 
 const SPONSORBLOCK_API_URL = "https://sponsor.ajay.app/api/skipSegments?videoID="
 
 func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
-	log.Info("[SponsorBlock] Looking up podcast in SponsorBlock API...")
+	log.Debug("[SponsorBlock] Looking up podcast in SponsorBlock API...")
 	resp, err := http.Get(SPONSORBLOCK_API_URL + youtubeVideoId)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return 0
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		log.Errorf("Video not found on SponsorBlock API: %s", youtubeVideoId)
+		return 0
+	}
+
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr != nil {
-		log.Fatal(bodyErr)
+		log.Error(bodyErr)
+		return 0
 	}
 	sponsorBlockResponse, marshErr := unmarshalSponsorBlockResponse(body)
 	if marshErr != nil {
-		log.Fatal(marshErr)
+		log.Error(marshErr)
+		return 0
 	}
 
 	totalTimeSkipped := calculateSkippedTime(sponsorBlockResponse)

@@ -21,7 +21,7 @@ var (
 )
 
 func BuildRssFeed(youtubePlaylistId string, host string) []byte {
-	log.Info("[RSS FEED] Building rss feed...")
+	log.Debug("[RSS FEED] Building rss feed...")
 
 	ytData := getYoutubeData(youtubePlaylistId)
 	allItems := cleanPlaylistItems(ytData)
@@ -79,7 +79,7 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 
 	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
 		os.Remove("/config/audio/" + youtubeVideoId + ".m4a")
-		log.Info("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
+		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}
 

@@ -3,17 +3,18 @@ package services
 import (
 	"encoding/xml"
 	"fmt"
-	log "github.com/labstack/gommon/log"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	log "github.com/labstack/gommon/log"
 )
 
 func GenerateRssFeed(podcast models.Podcast, appleData AppleResult, host string) []byte {
-	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
+	log.Debug("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
 
 	now := time.Now()
 	ytPodcast := New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.YoutubePodcastId, podcast.Description, &now)
@@ -67,7 +68,7 @@ func GenerateRssFeed(podcast models.Podcast, appleData AppleResult, host string)
 func parseTimeFromString(date string) time.Time {
 	parseTime, err := time.Parse(time.RFC3339, date)
 	if err != nil {
-		log.Fatal("Failed to parse time: " + date)
+		log.Error("Failed to parse time: " + date)
 	}
 	return parseTime
 }
