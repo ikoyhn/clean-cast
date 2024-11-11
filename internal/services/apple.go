@@ -15,7 +15,7 @@ const ITUNES_SEARCH_URL = "https://itunes.apple.com/search?term=%s&limit=1&media
 
 // Apple API lookup for podcast metadata
 func GetApplePodcastData(podcastName string) LookupResponse {
-	log.Info("[RSS FEED] Looking up podcast in Apple Search API...")
+	log.Debug("[RSS FEED] Looking up podcast in Apple Search API...")
 	resp, err := http.Get(fmt.Sprintf(ITUNES_SEARCH_URL, strings.ReplaceAll(podcastName, " ", "")))
 	if err != nil {
 		log.Fatal(err)
