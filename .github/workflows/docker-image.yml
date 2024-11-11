@@ -26,6 +26,5 @@ jobs:
         push: true
         tags: |
           ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:latest
-          ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:${GITHUB_REF_NAME}
-          ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:${GITHUB_SHA}
+          ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:${github.event.release.tag_name}
         
