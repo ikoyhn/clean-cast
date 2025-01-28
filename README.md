@@ -16,7 +16,7 @@ This app uses the following
 # Docker Variables
 |Variable| Description | Required |
 |--|--|--|
-| `-v config:/<container path>` | Where the audio files will be stored | Yes |
+| `-v <container path>:/config` | Where the audio files will be stored | Yes |
 | `-e GOOGLE_API_KEY=<api key>` | YouTube v3 API Key. Get your own api key [here](https://developers.google.com/youtube/v3/getting-started)| Yes |
 | `-e TOKEN=<secure key>` | Used for securing the endpoints. If using this you must add the query param `token` to the end of the URL for the `/rss` endpoint request ex.`?token=mySecureToken` | No |
 | `-e TRUSTED_HOSTS=<list of hosts>` | If you want to limit what host this service can be called from. Can be a list of hosts separated by a `,` Ex: `localhost:8080,https://podcast.com` | No |
@@ -25,11 +25,11 @@ This app uses the following
 ## Docker Run Command Templates
 > Docker run command (only required parameters)
 
-    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /config:/<audio download path here> ikoyhn/go-podcast-sponsor-block
+    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/go-podcast-sponsor-block
     
 > Docker run command (all parameters)
 
-    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /config:/<audio download path here> -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0"  ikoyhn/go-podcast-sponsor-block
+    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0"  ikoyhn/go-podcast-sponsor-block
 
 
   
