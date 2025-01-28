@@ -1,8 +1,5 @@
 # GO Podcast Sponsorblock RSS
 
-  
-
-This is a GO application that will take any podcast that is on Youtube and will generate a RSS feed with the audio only and all sponsored sections auto removed. The actual podcasts episodes are downloaded on demand from youtube when the user requests the specific episode then it is served to the user seamlessly. By default a CRON job is run weekly to delete any episode files that havent been accessed in over a week, this can be modified with docker variables. This project requires a Youtube v3 API Key which you can generate [here](https://developers.google.com/youtube/v3/getting-started).
 This is a GO application that will take any podcast that is on Youtube and will generate a RSS feed with the audio only and all sponsored sections auto removed. The actual podcasts episodes are downloaded on demand from youtube when the user requests the specific episode then it is served to the user seamlessly. By default a CRON job is run weekly to delete any episode files that havent been accessed in over a week, this can be modified with docker variables. This project requires a Youtube v3 API Key which you can generate [here](https://developers.google.com/youtube/v3/getting-started).
 
   
