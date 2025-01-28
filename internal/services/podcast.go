@@ -21,15 +21,24 @@ var (
 )
 
 func BuildRssFeed(youtubePlaylistId string, host string) []byte {
-	log.Debug("[RSS FEED] Building rss feed...")
+	log.Debug("[RSS FEED] Building rss feed for playlist...")
 
-	ytData := getYoutubeData(youtubePlaylistId)
+	ytData := getYoutubePlaylistData(youtubePlaylistId)
 	allItems := cleanPlaylistItems(ytData)
 	item := allItems[0]
 	closestApplePodcastData := getAppleData(item, allItems)
 
 	podcastRss := buildMainPodcast(ytData, closestApplePodcastData)
 	return GenerateRssFeed(podcastRss, closestApplePodcastData, host)
+}
+
+func BuildChannelRssFeed(channelUsername string, host string) []byte {
+	log.Debug("[RSS FEED] Building rss feed for channel...")
+
+	channelData, videoData, error := getChannelMetadataAndVideos(getChannelId(channelUsername))
+
+	podcastRss := buildMainPodcast(ytData, closestApplePodcastData)
+	return GenerateChannelRssFeed(podcastRss, closestApplePodcastData, host)
 }
 
 func buildMainPodcast(allItems []*youtube.PlaylistItem, appleData AppleResult) models.Podcast {
@@ -40,10 +49,15 @@ func buildMainPodcast(allItems []*youtube.PlaylistItem, appleData AppleResult) m
 		PodcastName:      appleData.TrackName,
 		Description:      appleData.TrackName,
 		PostedDate:       appleData.ReleaseDate,
-		ImageUrl:         appleData.ArtworkUrl100,
-		ArtistName:       appleData.ArtistName,
-		Explicit:         appleData.ContentAdvisoryRating,
-		PodcastEpisodes:  buildPodcastEpisodes(allItems),
+		ImageUrl: func() string {
+			if appleData.ArtworkUrl100 != "" {
+				return appleData.ArtworkUrl100
+			}
+			return getChannelProfilePicture(item.Snippet.ChannelId)
+		}(),
+		ArtistName:      appleData.ArtistName,
+		Explicit:        appleData.ContentAdvisoryRating,
+		PodcastEpisodes: buildPodcastEpisodes(allItems),
 	}
 }
 

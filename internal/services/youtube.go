@@ -20,7 +20,7 @@ const youtubeVideoUrl = "https://www.youtube.com/watch?v="
 var youtubeVideoMutexes = &sync.Map{}
 
 // Get all youtube playlist items and meta data for the RSS feed
-func getYoutubeData(youtubePlaylistId string) []*youtube.PlaylistItem {
+func getYoutubePlaylistData(youtubePlaylistId string) []*youtube.PlaylistItem {
 
 	log.Info("[RSS FEED] Getting youtube data...")
 	ctx := context.Background()
@@ -56,6 +56,127 @@ func getYoutubeData(youtubePlaylistId string) []*youtube.PlaylistItem {
 		}
 	}
 	return allItems
+}
+
+func getChannelId(username string) string {
+	ctx := context.Background()
+	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
+	if err != nil {
+		log.Error(err)
+	}
+
+	channelCall := youtubeService.Channels.List([]string{"id,snippet"})
+	channelCall = channelCall.ForUsername(username)
+
+	channelResponse, err := channelCall.Do()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if len(channelResponse.Items) == 0 {
+		log.Fatal("channel not found")
+	}
+
+	return channelResponse.Items[0].Id
+}
+
+func getChannelProfilePicture(channelID string) string {
+	ctx := context.Background()
+	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
+	if err != nil {
+		log.Error(err)
+	}
+
+	channelCall := youtubeService.Channels.List([]string{"snippet"})
+	channelCall = channelCall.Id(channelID)
+
+	channelResponse, err := channelCall.Do()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if len(channelResponse.Items) == 0 {
+		log.Fatal("channel not found")
+	}
+
+	profilePictureURL := channelResponse.Items[0].Snippet.Thumbnails.Default.Url
+
+	return profilePictureURL
+}
+
+func getChannelMetadataAndVideos(channelID string) (ChannelMetadata, []VideoMetadata, error) {
+	ctx := context.Background()
+	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
+	if err != nil {
+		return ChannelMetadata{}, nil, err
+	}
+
+	channelCall := youtubeService.Channels.List([]string{"snippet", "statistics", "contentDetails"})
+	channelCall = channelCall.Id(channelID)
+
+	channelResponse, err := channelCall.Do()
+	if err != nil {
+		return ChannelMetadata{}, nil, err
+	}
+
+	if len(channelResponse.Items) == 0 {
+		log.Error("channel not found")
+	}
+
+	channelMetadata := ChannelMetadata{
+		Title:        channelResponse.Items[0].Snippet.Title,
+		Description:  channelResponse.Items[0].Snippet.Description,
+		ThumbnailURL: channelResponse.Items[0].Snippet.Thumbnails.Default.Url,
+		PublishedAt:  channelResponse.Items[0].Snippet.PublishedAt,
+	}
+
+	videoMetadata := make([]VideoMetadata, 0)
+
+	nextPageToken := ""
+	for {
+		videoCall := youtubeService.Search.List([]string{"id,snippet"})
+		videoCall = videoCall.ChannelId(channelID)
+		videoCall = videoCall.Order("date")
+		videoCall = videoCall.MaxResults(50)
+		videoCall = videoCall.PageToken(nextPageToken)
+
+		videoResponse, err := videoCall.Do()
+		if err != nil {
+			return ChannelMetadata{}, nil, err
+		}
+
+		for _, item := range videoResponse.Items {
+			videoMetadata = append(videoMetadata, VideoMetadata{
+				Title:        item.Snippet.Title,
+				Description:  item.Snippet.Description,
+				ThumbnailURL: item.Snippet.Thumbnails.Default.Url,
+				VideoID:      item.Id.VideoId,
+				PublishedAt:  item.Snippet.PublishedAt,
+			})
+		}
+
+		if videoResponse.NextPageToken == "" {
+			break
+		}
+		nextPageToken = videoResponse.NextPageToken
+	}
+
+	return channelMetadata, videoMetadata, nil
+}
+
+type ChannelMetadata struct {
+	Title        string
+	Description  string
+	ThumbnailURL string
+	PublishedAt  string
+}
+
+type VideoMetadata struct {
+	Title        string
+	Description  string
+	ThumbnailURL string
+	VideoID      string
+	PublishedAt  string
 }
 
 // Remove unavailable youtube videos used during the RSS feed generation
