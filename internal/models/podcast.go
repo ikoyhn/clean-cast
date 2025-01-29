@@ -9,7 +9,7 @@ type PodcastEpisode struct {
 }
 
 type Podcast struct {
-	AppleId          int              `json:"apple_id" gorm:"primary_key"`
+	AppleId          string           `json:"apple_id" gorm:"primary_key"`
 	YoutubePodcastId string           `json:"youtube_podcast_id"`
 	PodcastName      string           `json:"podcast_name"`
 	Description      string           `json:"description"`
