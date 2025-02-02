@@ -28,7 +28,7 @@ This app uses the following
     
 > Docker run command (all parameters)
 
-    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0"  ikoyhn/go-podcast-sponsor-block
+    docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0" -e SPONSORBLOCK_CATEGORIES="sponsor" ikoyhn/go-podcast-sponsor-block
 
 
   
