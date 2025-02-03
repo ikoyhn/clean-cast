@@ -25,9 +25,19 @@ func getYoutubeData(youtubePlaylistId string) []*youtube.PlaylistItem {
 	log.Info("[RSS FEED] Getting youtube data...")
 	ctx := context.Background()
 
-	service, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
+	apiKey := os.Getenv("GOOGLE_API_KEY")
+	if apiKey == "" {
+		log.Fatalf("GOOGLE_API_KEY is not set")
+	}
+
+	service, err := youtube.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		log.Fatalf("Error creating new YouTube client: %v", err)
+		log.Errorf("Error creating new YouTube client: %v", err)
+		return nil
+	}
+	if service == nil {
+		log.Errorf("Failed to create YouTube service: %v", err)
+		return nil
 	}
 
 	continue_requesting_playlist_items := true
@@ -36,20 +46,21 @@ func getYoutubeData(youtubePlaylistId string) []*youtube.PlaylistItem {
 	for continue_requesting_playlist_items {
 		call := service.PlaylistItems.List([]string{"snippet", "status"}).
 			PlaylistId(youtubePlaylistId).
-			MaxResults(*maxResults)
+			MaxResults(50)
 		if pageToken != "first_call" {
 			call.PageToken(pageToken)
 		}
 
 		response, ytAgainErr := call.Do()
+		if ytAgainErr != nil {
+			log.Fatalf("Error calling YouTube API: %v. Ensure your API key is valid", response)
+		}
 		if response.HTTPStatusCode != http.StatusOK {
-			log.Fatalf("YouTube API returned status code %v", response.HTTPStatusCode)
+			log.Errorf("YouTube API returned status code %v", response.HTTPStatusCode)
+			return nil
 		}
 
 		pageToken = response.NextPageToken
-		if ytAgainErr != nil {
-			log.Fatalf("Error calling YouTube API: %v", ytAgainErr)
-		}
 		allItems = append(allItems, response.Items...)
 		if response.NextPageToken == "" {
 			continue_requesting_playlist_items = false
