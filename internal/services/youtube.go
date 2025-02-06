@@ -111,7 +111,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	if categories == "" {
 		categories = "sponsor"
 	}
-	strings.trimSpace(categories)
+	categories = strings.TrimSpace(categories)
 
 	dl := ytdlp.New().
 		NoProgress().
