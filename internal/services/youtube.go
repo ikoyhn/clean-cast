@@ -133,6 +133,11 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		}).
 		Output(youtubeVideoId + ".%(ext)s")
 
+	cookiesFile := os.Getenv("COOKIES_FILE")
+	if cookiesFile != "" {
+		dl.Cookies("config/" + cookiesFile)
+	}
+
 	done := make(chan struct{})
 	go func() {
 		r, err := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
