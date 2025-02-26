@@ -69,28 +69,6 @@ func getYoutubePlaylistData(youtubePlaylistId string) []*youtube.PlaylistItem {
 	return allItems
 }
 
-func getChannelId(username string) string {
-	ctx := context.Background()
-	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
-	if err != nil {
-		log.Error(err)
-	}
-
-	channelCall := youtubeService.Channels.List([]string{"id,snippet"})
-	channelCall = channelCall.ForUsername(username)
-
-	channelResponse, err := channelCall.Do()
-	if err != nil {
-		log.Error(err)
-	}
-
-	if len(channelResponse.Items) == 0 {
-		log.Fatal("channel not found")
-	}
-
-	return channelResponse.Items[0].Id
-}
-
 func getChannelProfilePicture(channelID string) string {
 	ctx := context.Background()
 	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
@@ -98,7 +76,7 @@ func getChannelProfilePicture(channelID string) string {
 		log.Error(err)
 	}
 
-	channelCall := youtubeService.Channels.List([]string{"snippet"})
+	channelCall := youtubeService.Channels.List([]string{"brandingSettings", "snippet"})
 	channelCall = channelCall.Id(channelID)
 
 	channelResponse, err := channelCall.Do()
@@ -107,15 +85,18 @@ func getChannelProfilePicture(channelID string) string {
 	}
 
 	if len(channelResponse.Items) == 0 {
-		log.Fatal("channel not found")
+		log.Error("channel not found")
 	}
 
-	profilePictureURL := channelResponse.Items[0].Snippet.Thumbnails.Default.Url
+	channel := channelResponse.Items[0]
+	profilePictureURL := channel.BrandingSettings.Image.BannerExternalUrl
 
+	log.Info("[RSS FEED] Channel profile picture: ", profilePictureURL)
 	return profilePictureURL
 }
 
 func getChannelMetadataAndVideos(channelID string) (ChannelMetadata, []VideoMetadata, error) {
+	log.Info("[RSS FEED] Getting channel data...")
 	ctx := context.Background()
 	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(os.Getenv("GOOGLE_API_KEY")))
 	if err != nil {
@@ -139,6 +120,7 @@ func getChannelMetadataAndVideos(channelID string) (ChannelMetadata, []VideoMeta
 		Description:  channelResponse.Items[0].Snippet.Description,
 		ThumbnailURL: channelResponse.Items[0].Snippet.Thumbnails.Default.Url,
 		PublishedAt:  channelResponse.Items[0].Snippet.PublishedAt,
+		Id:           channelResponse.Items[0].Id,
 	}
 
 	videoMetadata := make([]VideoMetadata, 0)
@@ -180,6 +162,7 @@ type ChannelMetadata struct {
 	Description  string
 	ThumbnailURL string
 	PublishedAt  string
+	Id           string
 }
 
 type VideoMetadata struct {

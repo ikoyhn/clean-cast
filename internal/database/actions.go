@@ -39,12 +39,12 @@ func DeletePodcastCronJob() {
 
 func TrackEpisodeFiles() {
 	log.Info("[DB] Tracking existing episode files...")
-	if _, err := os.Stat("/config"); os.IsNotExist(err) {
-		os.MkdirAll("/config", 0755)
-	}
 	audioDir := "/config/audio"
 	if _, err := os.Stat(audioDir); os.IsNotExist(err) {
 		os.MkdirAll(audioDir, 0755)
+	}
+	if _, err := os.Stat("/config"); os.IsNotExist(err) {
+		os.MkdirAll("/config", 0755)
 	}
 	files, err := os.ReadDir("/config/audio/")
 	if err != nil {
