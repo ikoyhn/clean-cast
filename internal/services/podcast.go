@@ -1,7 +1,6 @@
 package services
 
 import (
-	"flag"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"math"
@@ -15,10 +14,6 @@ import (
 type Env struct {
 	db *gorm.DB
 }
-
-var (
-	maxResults = flag.Int64("max-results", 50, "Max YouTube results")
-)
 
 func BuildRssFeed(youtubePlaylistId string, host string) []byte {
 	log.Debug("[RSS FEED] Building rss feed for playlist...")
