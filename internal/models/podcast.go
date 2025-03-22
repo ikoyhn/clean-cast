@@ -14,6 +14,26 @@ type PodcastEpisode struct {
 	PodcastId          string `json:"podcast_id" gorm:"foreignkey:PodcastId;association_foreignkey:Id"`
 }
 
+type Podcast struct {
+	Id              string           `json:"id" gorm:"primary_key"`
+	AppleId         string           `json:"apple_id"`
+	PodcastName     string           `json:"podcast_name"`
+	Description     string           `json:"description"`
+	Category        string           `json:"category"`
+	PostedDate      string           `json:"posted_date"`
+	ImageUrl        string           `json:"image_url"`
+	LastBuildDate   string           `json:"last_build_date"`
+	PodcastEpisodes []PodcastEpisode `json:"podcast_episodes"`
+	ArtistName      string           `json:"artist_name"`
+	Explicit        string           `json:"explicit"`
+}
+
+type EpisodePlaybackHistory struct {
+	YoutubeVideoId   string  `json:"youtube_video_id" gorm:"primary_key"`
+	LastAccessDate   int64   `json:"last_access_date"`
+	TotalTimeSkipped float64 `json:"total_time_skipped"`
+}
+
 func NewPodcastEpisode(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
 	return PodcastEpisode{
 		YoutubeVideoId:     youtubeVideo.Snippet.ResourceId.VideoId,
@@ -34,24 +54,4 @@ func NewPodcastEpisodeFromSearch(youtubeVideo *youtube.SearchResult) PodcastEpis
 		Type:               "CHANNEL",
 		PodcastId:          youtubeVideo.Snippet.ChannelId,
 	}
-}
-
-type Podcast struct {
-	Id              string           `json:"id" gorm:"primary_key"`
-	AppleId         string           `json:"apple_id"`
-	PodcastName     string           `json:"podcast_name"`
-	Description     string           `json:"description"`
-	Category        string           `json:"category"`
-	PostedDate      string           `json:"posted_date"`
-	ImageUrl        string           `json:"image_url"`
-	LastBuildDate   string           `json:"last_build_date"`
-	PodcastEpisodes []PodcastEpisode `json:"podcast_episodes"`
-	ArtistName      string           `json:"artist_name"`
-	Explicit        string           `json:"explicit"`
-}
-
-type EpisodePlaybackHistory struct {
-	YoutubeVideoId   string  `json:"youtube_video_id" gorm:"primary_key"`
-	LastAccessDate   int64   `json:"last_access_date"`
-	TotalTimeSkipped float64 `json:"total_time_skipped"`
 }

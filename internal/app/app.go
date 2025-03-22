@@ -18,7 +18,6 @@ import (
 )
 
 func Start() {
-
 	ytdlp.MustInstall(context.TODO(), nil)
 	e := echo.New()
 
