@@ -22,7 +22,7 @@ func Start() {
 	ytdlp.MustInstall(context.TODO(), nil)
 	e := echo.New()
 
-	database.ConnectDatabase()
+	database.HistoryDatabaseConnect()
 	database.TrackEpisodeFiles()
 
 	setupCron()
@@ -41,7 +41,7 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
-		data := services.BuildRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
+		data := services.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")

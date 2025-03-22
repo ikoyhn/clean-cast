@@ -56,6 +56,12 @@ func findClosestResult(results []AppleResult, target int) AppleResult {
 	return closest
 }
 
+func getAppleData(channelTitle string, numOfVideos int) AppleResult {
+	itunesResponse := GetApplePodcastData(channelTitle)
+	closestApplePodcastData := findClosestResult(itunesResponse.Results, numOfVideos)
+	return closestApplePodcastData
+}
+
 type LookupResponse struct {
 	// ResultCount contains info about total found results number.
 	ResultCount int64 `json:"resultCount"`
