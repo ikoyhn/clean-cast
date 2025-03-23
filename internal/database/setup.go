@@ -11,7 +11,7 @@ import (
 
 var db *gorm.DB
 
-func HistoryDatabaseConnect() {
+func SetupDatabase() {
 	var err error
 	// Create the database file if it doesn't exist
 	if _, err := os.Stat("/config/sqlite.db"); os.IsNotExist(err) {

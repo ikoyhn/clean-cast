@@ -157,7 +157,6 @@ func GetPodcast(id string) *models.Podcast {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
-		// handle other errors
 	}
 	if podcastDb.Id == "" {
 		return nil

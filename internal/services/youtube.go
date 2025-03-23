@@ -108,11 +108,22 @@ func getChannelData(channelIdentifier string, service *youtube.Service, isPlayli
 		}
 		channel := channelResponse.Items[0]
 
+		imageUrl := ""
+		if channel.Snippet.Thumbnails.Maxres != nil {
+			imageUrl = channel.Snippet.Thumbnails.Maxres.Url
+		} else if channel.Snippet.Thumbnails.Standard != nil {
+			imageUrl = channel.Snippet.Thumbnails.Standard.Url
+		} else if channel.Snippet.Thumbnails.High != nil {
+			imageUrl = channel.Snippet.Thumbnails.High.Url
+		} else if channel.Snippet.Thumbnails.Default != nil {
+			imageUrl = channel.Snippet.Thumbnails.Default.Url
+		}
+
 		dbPodcast = &models.Podcast{
 			Id:              channel.Id,
 			PodcastName:     channel.Snippet.Title,
 			Description:     channel.Snippet.Description,
-			ImageUrl:        channel.Snippet.Thumbnails.Default.Url,
+			ImageUrl:        imageUrl,
 			PostedDate:      channel.Snippet.PublishedAt,
 			PodcastEpisodes: []models.PodcastEpisode{},
 			ArtistName:      channel.Snippet.Title,
@@ -158,20 +169,42 @@ func getChannelMetadataAndVideos(channelID string, service *youtube.Service) {
 		}
 
 		for _, item := range videoResponse.Items {
-			exists, err := database.EpisodeExists(item.Id.VideoId, "CHANNEL")
-			if err != nil {
-				log.Error(err)
-			}
-			if !exists {
-				if item.Id.VideoId != "" {
-					missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item))
+			if item.Id.Kind == "youtube#video" {
+				videoCall := service.Videos.List([]string{"id,snippet,contentDetails"})
+				videoCall = videoCall.Id(item.Id.VideoId)
+
+				videoResponse, err := videoCall.Do()
+				if err != nil {
+					log.Error(err)
+					continue
 				}
 
-			} else {
-				if len(missingVideos) > 0 {
-					database.SavePlaylistEpisodes(missingVideos)
+				if len(videoResponse.Items) > 0 {
+					durationStr := videoResponse.Items[0].ContentDetails.Duration
+					duration, err := ParseDuration(durationStr)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+
+					if duration.Seconds() >= 65 {
+						exists, err := database.EpisodeExists(item.Id.VideoId, "CHANNEL")
+						if err != nil {
+							log.Error(err)
+						}
+						if !exists {
+							if item.Id.VideoId != "" {
+								missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item))
+							}
+
+						} else {
+							if len(missingVideos) > 0 {
+								database.SavePlaylistEpisodes(missingVideos)
+							}
+							return
+						}
+					}
 				}
-				return
 			}
 		}
 
@@ -183,6 +216,19 @@ func getChannelMetadataAndVideos(channelID string, service *youtube.Service) {
 	if len(missingVideos) > 0 {
 		database.SavePlaylistEpisodes(missingVideos)
 	}
+}
+
+func ParseDuration(durationStr string) (time.Duration, error) {
+	// Remove the 'PT' prefix from the duration string
+	durationStr = strings.Replace(durationStr, "PT", "", 1)
+
+	// Replace 'H' with 'h', 'M' with 'm', and 'S' with 's'
+	durationStr = strings.Replace(durationStr, "H", "h", 1)
+	durationStr = strings.Replace(durationStr, "M", "m", 1)
+	durationStr = strings.Replace(durationStr, "S", "s", 1)
+
+	// Parse the duration string
+	return time.ParseDuration(durationStr)
 }
 
 // Remove unavailable youtube videos used during the RSS feed generation

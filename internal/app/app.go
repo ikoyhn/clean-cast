@@ -21,7 +21,7 @@ func Start() {
 	ytdlp.MustInstall(context.TODO(), nil)
 	e := echo.New()
 
-	database.HistoryDatabaseConnect()
+	database.SetupDatabase()
 	database.TrackEpisodeFiles()
 
 	setupCron()
