@@ -32,6 +32,9 @@ func Start() {
 
 func registerRoutes(e *echo.Echo) {
 	e.GET("/channel/:channelId", func(c echo.Context) error {
+		if !common.IsValidParam(c.Param("channelId")) {
+			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
+		}
 		data := services.BuildChannelRssFeed(c.Param("channelId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
@@ -40,6 +43,9 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
+		if !common.IsValidParam(c.Param("youtubePlaylistId")) {
+			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid youtube playlist id"))
+		}
 		data := services.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
@@ -48,7 +54,11 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/media/:youtubeVideoId", func(c echo.Context) error {
+
 		fileName := c.Param("youtubeVideoId")
+		if !common.IsValidParam(fileName) {
+			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
+		}
 		if !common.IsValidFilename(fileName) {
 			c.Error(echo.ErrNotFound)
 		}

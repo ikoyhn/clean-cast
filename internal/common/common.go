@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strings"
 	"unicode"
 )
 
@@ -9,6 +10,13 @@ func IsValidFilename(filename string) bool {
 		if !unicode.IsLetter(c) && !unicode.IsNumber(c) && c != '.' && c != '_' && c != '-' {
 			return false
 		}
+	}
+	return true
+}
+
+func IsValidParam(param string) bool {
+	if strings.Contains(param, "/") || strings.Contains(param, "\\") || strings.Contains(param, "..") {
+		return false
 	}
 	return true
 }
