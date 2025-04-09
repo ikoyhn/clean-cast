@@ -2,6 +2,7 @@ package services
 
 import (
 	"ikoyhn/podcast-sponsorblock/internal/database"
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 
 	log "github.com/labstack/gommon/log"
@@ -21,7 +22,7 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	}
 
 	podcastRss := buildPodcast(podcast, episodes)
-	return GenerateRssFeed(podcastRss, host)
+	return GenerateRssFeed(podcastRss, host, enum.PLAYLIST)
 }
 
 func buildPodcast(podcast models.Podcast, allItems []models.PodcastEpisode) models.Podcast {

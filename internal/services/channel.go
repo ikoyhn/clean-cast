@@ -2,6 +2,7 @@ package services
 
 import (
 	"ikoyhn/podcast-sponsorblock/internal/database"
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"math"
 	"os"
 
@@ -22,7 +23,7 @@ func BuildChannelRssFeed(channelId string, host string) []byte {
 	}
 
 	podcastRss := buildPodcast(podcast, episodes)
-	return GenerateRssFeed(podcastRss, host)
+	return GenerateRssFeed(podcastRss, host, enum.CHANNEL)
 }
 
 func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {

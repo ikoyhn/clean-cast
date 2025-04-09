@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/xml"
 	"fmt"
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"net/url"
 	"os"
@@ -13,11 +14,17 @@ import (
 	log "github.com/labstack/gommon/log"
 )
 
-func GenerateRssFeed(podcast models.Podcast, host string) []byte {
+func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.PodcastType) []byte {
 	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
 
+	podcastLink := "https://www.youtube.com/playlist?list=" + podcast.Id
+
+	if podcastType == enum.CHANNEL {
+		podcastLink = "https://www.youtube.com/channel/" + podcast.Id
+	}
+
 	now := time.Now()
-	ytPodcast := New(podcast.PodcastName, "https://www.youtube.com/playlist?list="+podcast.Id, podcast.Description, &now)
+	ytPodcast := New(podcast.PodcastName, podcastLink, podcast.Description, &now)
 	ytPodcast.AddImage(transformArtworkURL(podcast.ImageUrl, 1000, 1000))
 	ytPodcast.AddCategory(podcast.Category, []string{""})
 	ytPodcast.Docs = "http://www.rssboard.org/rss-specification"

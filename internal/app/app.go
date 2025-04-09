@@ -32,6 +32,7 @@ func Start() {
 
 func registerRoutes(e *echo.Echo) {
 	e.GET("/channel/:channelId", func(c echo.Context) error {
+		checkAuthentication(c)
 		if !common.IsValidParam(c.Param("channelId")) {
 			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
 		}
@@ -43,6 +44,7 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
+		checkAuthentication(c)
 		if !common.IsValidParam(c.Param("youtubePlaylistId")) {
 			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid youtube playlist id"))
 		}
@@ -54,6 +56,7 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/media/:youtubeVideoId", func(c echo.Context) error {
+		checkAuthentication(c)
 
 		fileName := c.Param("youtubeVideoId")
 		if !common.IsValidParam(fileName) {
@@ -100,6 +103,15 @@ func registerRoutes(e *echo.Echo) {
 	log.Info("Starting server on " + host + ": " + port)
 	e.Logger.Fatal(e.Start(host + ":" + port))
 
+}
+
+func checkAuthentication(c echo.Context) {
+	if os.Getenv("TOKEN") != "" {
+		token := c.Request().URL.Query().Get("token")
+		if token != os.Getenv("TOKEN") {
+			c.Error(echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized"))
+		}
+	}
 }
 
 func setupCron() {
