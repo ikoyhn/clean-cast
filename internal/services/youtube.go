@@ -57,7 +57,7 @@ func getYoutubePlaylistData(youtubePlaylistId string, service *youtube.Service) 
 			if !exists {
 				cleanedVideo := cleanPlaylistItems(item)
 				if cleanedVideo != nil {
-					missingVideos = append(missingVideos, models.NewPodcastEpisode(cleanedVideo))
+					missingVideos = append(missingVideos, models.NewPodcastEpisodeFromPlaylist(cleanedVideo))
 				}
 			} else {
 				if len(missingVideos) > 0 {
@@ -138,84 +138,106 @@ func getChannelData(channelIdentifier string, service *youtube.Service, isPlayli
 }
 func getChannelMetadataAndVideos(channelID string, service *youtube.Service) {
 	log.Info("[RSS FEED] Getting channel data...")
-
-	channelCall := service.Channels.List([]string{"snippet", "statistics", "contentDetails"})
-	channelCall = channelCall.Id(channelID)
-
-	channelResponse, err := channelCall.Do()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	if len(channelResponse.Items) == 0 {
-		log.Error("channel not found")
+	doesChannelExist := findChannel(channelID, service)
+	if !doesChannelExist {
 		return
 	}
 
 	missingVideos := []models.PodcastEpisode{}
 	nextPageToken := ""
 	for {
-		videoCall := service.Search.List([]string{"id,snippet"})
-		videoCall = videoCall.ChannelId(channelID)
-		videoCall = videoCall.Order("date")
-		videoCall = videoCall.MaxResults(50)
-		videoCall = videoCall.PageToken(nextPageToken)
+		channelVideosCall := service.Search.List([]string{"snippet"})
+		channelVideosCall.ChannelId(channelID)
+		channelVideosCall.Order("date")
+		channelVideosCall.MaxResults(50)
+		channelVideosCall.PageToken(nextPageToken)
+		channelVideosCall.Type("video")
 
-		videoResponse, err := videoCall.Do()
+		channelVideoResponse, err := channelVideosCall.Do()
 		if err != nil {
 			log.Error(err)
 			return
 		}
 
-		for _, item := range videoResponse.Items {
-			if item.Id.Kind == "youtube#video" {
-				videoCall := service.Videos.List([]string{"id,snippet,contentDetails"})
-				videoCall = videoCall.Id(item.Id.VideoId)
+		videoIds := getUnSavedEpisodeIds(channelVideoResponse)
+		missingVideos = findMissingPodcastEpisodes(service, videoIds, missingVideos)
 
-				videoResponse, err := videoCall.Do()
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-
-				if len(videoResponse.Items) > 0 {
-					durationStr := videoResponse.Items[0].ContentDetails.Duration
-					duration, err := ParseDuration(durationStr)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-
-					if duration.Seconds() >= 65 {
-						exists, err := database.EpisodeExists(item.Id.VideoId, "CHANNEL")
-						if err != nil {
-							log.Error(err)
-						}
-						if !exists {
-							if item.Id.VideoId != "" {
-								missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item))
-							}
-
-						} else {
-							if len(missingVideos) > 0 {
-								database.SavePlaylistEpisodes(missingVideos)
-							}
-							return
-						}
-					}
-				}
-			}
-		}
-
-		if videoResponse.NextPageToken == "" {
+		if len(missingVideos) > 0 {
+			database.SavePlaylistEpisodes(missingVideos)
+			missingVideos = []models.PodcastEpisode{}
+		} else {
 			break
 		}
-		nextPageToken = videoResponse.NextPageToken
+
+		if channelVideoResponse.NextPageToken == "" {
+			break
+		}
+		nextPageToken = channelVideoResponse.NextPageToken
 	}
-	if len(missingVideos) > 0 {
-		database.SavePlaylistEpisodes(missingVideos)
+}
+
+func findChannel(channelID string, service *youtube.Service) bool {
+	exists, err := database.PodcastExists(channelID)
+	if err != nil {
+		log.Error(err)
+		return true
 	}
+
+	if !exists {
+		channelCall := service.Channels.List([]string{"snippet", "statistics", "contentDetails"})
+		channelCall = channelCall.Id(channelID)
+
+		channelResponse, err := channelCall.Do()
+		if err != nil {
+			log.Error(err)
+			return false
+		}
+
+		if len(channelResponse.Items) == 0 {
+			log.Error("channel not found")
+			return false
+		}
+	}
+	return true
+}
+
+func getUnSavedEpisodeIds(channelVideoResponse *youtube.SearchListResponse) []string {
+	videoIds := []string{}
+	for _, item := range channelVideoResponse.Items {
+		if item.Id.Kind == "youtube#video" {
+			exists, err := database.EpisodeExists(item.Id.VideoId, "CHANNEL")
+			if err != nil {
+				log.Error(err)
+			}
+			if !exists {
+				videoIds = append(videoIds, item.Id.VideoId)
+			}
+		}
+	}
+	return videoIds
+}
+
+func findMissingPodcastEpisodes(service *youtube.Service, videoIds []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
+	videoCall := service.Videos.List([]string{"id,snippet,contentDetails"})
+	videoCall = videoCall.Id(videoIds...)
+	videoCall = videoCall.MaxResults(int64(len(videoIds)))
+	videoResponse, err := videoCall.Do()
+	if err != nil {
+		log.Error(err)
+		return missingVideos
+	}
+
+	for _, item := range videoResponse.Items {
+		if item.Id != "" {
+			duration, err := ParseDuration(item.ContentDetails.Duration)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item, duration))
+		}
+	}
+	return missingVideos
 }
 
 func ParseDuration(durationStr string) (time.Duration, error) {

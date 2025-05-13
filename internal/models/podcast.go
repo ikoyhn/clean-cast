@@ -1,17 +1,20 @@
 package models
 
 import (
+	"time"
+
 	"google.golang.org/api/youtube/v3"
 )
 
 type PodcastEpisode struct {
-	Id                 int32  `gorm:"autoIncrement;primary_key;not null"`
-	YoutubeVideoId     string `json:"youtube_video_id" gorm:"index:youtubevideoid_type"`
-	EpisodeName        string `json:"episode_name"`
-	EpisodeDescription string `json:"episode_description"`
-	PublishedDate      string `json:"published_date"`
-	Type               string `json:"type" gorm:"index:youtubevideoid_type_channelid_type"`
-	PodcastId          string `json:"podcast_id" gorm:"foreignkey:PodcastId;association_foreignkey:Id"`
+	Id                 int32         `gorm:"autoIncrement;primary_key;not null"`
+	YoutubeVideoId     string        `json:"youtube_video_id" gorm:"index:youtubevideoid_type"`
+	EpisodeName        string        `json:"episode_name"`
+	EpisodeDescription string        `json:"episode_description"`
+	PublishedDate      string        `json:"published_date"`
+	Type               string        `json:"type" gorm:"index:youtubevideoid_type_channelid_type"`
+	PodcastId          string        `json:"podcast_id" gorm:"foreignkey:PodcastId;association_foreignkey:Id"`
+	Duration           time.Duration `json:"duration"`
 }
 
 type Podcast struct {
@@ -34,7 +37,7 @@ type EpisodePlaybackHistory struct {
 	TotalTimeSkipped float64 `json:"total_time_skipped"`
 }
 
-func NewPodcastEpisode(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
+func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
 	return PodcastEpisode{
 		YoutubeVideoId:     youtubeVideo.Snippet.ResourceId.VideoId,
 		EpisodeName:        youtubeVideo.Snippet.Title,
@@ -45,13 +48,14 @@ func NewPodcastEpisode(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
 	}
 }
 
-func NewPodcastEpisodeFromSearch(youtubeVideo *youtube.SearchResult) PodcastEpisode {
+func NewPodcastEpisodeFromSearch(youtubeVideo *youtube.Video, duration time.Duration) PodcastEpisode {
 	return PodcastEpisode{
-		YoutubeVideoId:     youtubeVideo.Id.VideoId,
+		YoutubeVideoId:     youtubeVideo.Id,
 		EpisodeName:        youtubeVideo.Snippet.Title,
 		EpisodeDescription: youtubeVideo.Snippet.Description,
 		PublishedDate:      youtubeVideo.Snippet.PublishedAt,
 		Type:               "CHANNEL",
 		PodcastId:          youtubeVideo.Snippet.ChannelId,
+		Duration:           duration,
 	}
 }

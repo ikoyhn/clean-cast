@@ -123,6 +123,18 @@ func EpisodeExists(youtubeVideoId string, episodeType string) (bool, error) {
 	return true, nil
 }
 
+func PodcastExists(podcastId string) (bool, error) {
+	var episode models.Podcast
+	err := db.Where("id = ?", podcastId).First(&episode).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func GetLatestEpisode(podcastId string) (*models.PodcastEpisode, error) {
 	var episode models.PodcastEpisode
 	err := db.Where("podcast_id = ?", podcastId).Order("published_date DESC").First(&episode).Error
@@ -132,11 +144,6 @@ func GetLatestEpisode(podcastId string) (*models.PodcastEpisode, error) {
 	return &episode, nil
 }
 
-func GetAllPlaylistVideosByPlaylistId(playlistId string) []models.PodcastEpisode {
-	var episodes []models.PodcastEpisode
-	db.Where("playlist_id != ?", playlistId).Find(&episodes)
-	return episodes
-}
 func GetPodcastEpisodesByPodcastId(podcastId string) ([]models.PodcastEpisode, error) {
 	var episodes []models.PodcastEpisode
 	err := db.Where("podcast_id = ?", podcastId).Find(&episodes).Error

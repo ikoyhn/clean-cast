@@ -182,42 +182,6 @@ func (i *Item) AddSummary(summary string) {
 	}
 }
 
-// AddDuration adds the duration to the iTunes duration field.
-func (i *Item) AddDuration(durationInSeconds int64) {
-	if durationInSeconds <= 0 {
-		return
-	}
-	i.IDuration = parseDuration(durationInSeconds)
-}
-
-var parseDuration = func(duration int64) string {
-	h := duration / 3600
-	duration = duration % 3600
-
-	m := duration / 60
-	duration = duration % 60
-
-	s := duration
-
-	// HH:MM:SS
-	if h > 9 {
-		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
-	}
-
-	// H:MM:SS
-	if h > 0 {
-		return fmt.Sprintf("%d:%02d:%02d", h, m, s)
-	}
-
-	// MM:SS
-	if m > 9 {
-		return fmt.Sprintf("%02d:%02d", m, s)
-	}
-
-	// M:SS
-	return fmt.Sprintf("%d:%02d", m, s)
-}
-
 var parseDateRFC1123Z = func(t *time.Time) string {
 	if t != nil && !t.IsZero() {
 		return t.Format(time.RFC1123Z)

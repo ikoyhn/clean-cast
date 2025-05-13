@@ -15,7 +15,7 @@ import (
 )
 
 func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.PodcastType) []byte {
-	log.Info("[RSS FEED] Generating RSS Feed with Youtube and Apple metadata")
+	log.Info("[RSS FEED] Generating RSS Feed...")
 
 	podcastLink := "https://www.youtube.com/playlist?list=" + podcast.Id
 
@@ -32,7 +32,7 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 
 	if podcast.PodcastEpisodes != nil {
 		for _, podcastEpisode := range podcast.PodcastEpisodes {
-			if podcastEpisode.EpisodeName == "Private video" || podcastEpisode.EpisodeDescription == "This video is private." {
+			if (podcastEpisode.Type == "CHANNEL" && podcastEpisode.Duration.Seconds() < 120) || podcastEpisode.EpisodeName == "Private video" || podcastEpisode.EpisodeDescription == "This video is private." {
 				continue
 			}
 			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
