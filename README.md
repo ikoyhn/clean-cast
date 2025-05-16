@@ -112,7 +112,9 @@ Below is a guide to get the application running
 ### Running the App
 
 1. Build out your Docker run command (For more Docker variables and compose examples go [here](https://github.com/ikoyhn/go-podcast-sponsor-block/blob/main/DOCKER-CONFIG.md))
-    - > docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v <audio download path here>:/config ikoyhn/go-podcast-sponsor-block
+    - ```
+      docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/go-podcast-sponsor-block
+      ```
 2. Run the command to start the app up
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
