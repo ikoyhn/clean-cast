@@ -1,16 +1,16 @@
 ## Docker Run Command Templates
 
-> Docker run command (only required parameters)
+Docker run command (only required parameters)
 
   
 
 > docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/go-podcast-sponsor-block
 
-> Docker run command (all parameters)
+Docker run command (all parameters)
 
   
 
-docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0" -e SPONSORBLOCK_CATEGORIES="sponsor" -e COOKIES_FILE <cookies file path here> ikoyhn/go-podcast-sponsor-block
+> docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config -e TRUSTED_HOSTS=<add hosts here> -e TOKEN=<add secure token here> -e CRON="0 0 * * 0" -e SPONSORBLOCK_CATEGORIES="sponsor" -e COOKIES_FILE <cookies file path here> ikoyhn/go-podcast-sponsor-block
 
   
 

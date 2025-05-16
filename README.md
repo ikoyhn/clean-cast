@@ -39,13 +39,11 @@
   <p align="center">
     Podcasting, purified
     <br />
-    CleanCast 
-    <br />
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">View Demo</a>
-    &middot;
+    <!-- <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">View Demo</a>
+    &middot; -->
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -68,7 +66,7 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#running-the-app">Installation</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
