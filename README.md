@@ -39,13 +39,11 @@
   <p align="center">
     Podcasting, purified
     <br />
-    CleanCast 
-    <br />
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">View Demo</a>
-    &middot;
+    <!-- <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">View Demo</a>
+    &middot; -->
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
     <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -68,7 +66,7 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#running-the-app">Installation</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -202,7 +200,7 @@ Distributed under the MIT. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Jared Lynch - jaredlynch13@gmail.com.com
+Jared Lynch - jaredlynch13@gmail.com
 
 Project Link: [https://github.com/ikoyhn/go-podcast-sponsor-block](https://github.com/ikoyhn/go-podcast-sponsor-block)
 
@@ -233,6 +231,6 @@ Project Link: [https://github.com/ikoyhn/go-podcast-sponsor-block](https://githu
 [license-shield]: https://img.shields.io/github/license/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
 [license-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/jared-lynch-1998
+[linkedin-url]: https://www.linkedin.com/in/jared-lynch1998/
 [golang.com]: https://img.shields.io/badge/Go-00ADD8?logo=Go&logoColor=white&style=for-the-badge
 [golang-url]: https://go.dev
