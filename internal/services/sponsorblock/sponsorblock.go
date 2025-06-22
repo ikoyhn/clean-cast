@@ -1,8 +1,10 @@
-package services
+package sponsorblock
 
 import (
 	"encoding/json"
+	"ikoyhn/podcast-sponsorblock/internal/database"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -12,10 +14,27 @@ import (
 
 const SPONSORBLOCK_API_URL = "https://sponsor.ajay.app/api/skipSegments?videoID="
 
+func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
+	episodeHistory := database.GetEpisodePlaybackHistory(youtubeVideoId)
+
+	updatedSkippedTime := TotalSponsorTimeSkipped(youtubeVideoId)
+	if episodeHistory == nil {
+		return true, updatedSkippedTime
+	}
+
+	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
+		os.Remove("/config/audio/" + youtubeVideoId + ".m4a")
+		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
+		return true, updatedSkippedTime
+	}
+
+	return false, updatedSkippedTime
+}
+
 func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
 	log.Debug("[SponsorBlock] Looking up podcast in SponsorBlock API...")
 	endURL := SPONSORBLOCK_API_URL + youtubeVideoId
-	
+
 	if categories := getCategories(); categories != nil {
 		for _, category := range categories {
 			endURL += "&category=" + strings.TrimSpace(category)
@@ -30,7 +49,7 @@ func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		log.Errorf("Video not found on SponsorBlock API: %s", youtubeVideoId)
+		log.Warnf("Video not found on SponsorBlock API: %s", youtubeVideoId)
 		return 0
 	}
 

@@ -2,13 +2,18 @@ package app
 
 import (
 	"context"
-	"ikoyhn/podcast-sponsorblock/internal/common"
 	"ikoyhn/podcast-sponsorblock/internal/database"
-	"ikoyhn/podcast-sponsorblock/internal/services"
+	"ikoyhn/podcast-sponsorblock/internal/models"
+	"ikoyhn/podcast-sponsorblock/internal/services/common"
+	"ikoyhn/podcast-sponsorblock/internal/services/downloader"
+	"ikoyhn/podcast-sponsorblock/internal/services/playlist"
+	"ikoyhn/podcast-sponsorblock/internal/services/rss"
+	"ikoyhn/podcast-sponsorblock/internal/services/sponsorblock"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -33,10 +38,8 @@ func Start() {
 func registerRoutes(e *echo.Echo) {
 	e.GET("/channel/:channelId", func(c echo.Context) error {
 		checkAuthentication(c)
-		if !common.IsValidParam(c.Param("channelId")) {
-			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
-		}
-		data := services.BuildChannelRssFeed(c.Param("channelId"), handler(c.Request()))
+		rssRequestParams := validateQueryParams(c)
+		data := rss.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
@@ -45,10 +48,8 @@ func registerRoutes(e *echo.Echo) {
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
 		checkAuthentication(c)
-		if !common.IsValidParam(c.Param("youtubePlaylistId")) {
-			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid youtube playlist id"))
-		}
-		data := services.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
+		validateQueryParams(c)
+		data := playlist.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
@@ -66,10 +67,10 @@ func registerRoutes(e *echo.Echo) {
 			c.Error(echo.ErrNotFound)
 		}
 		file, err := os.Open("/config/audio/" + fileName)
-		needRedownload, totalTimeSkipped := services.DeterminePodcastDownload(fileName[:len(fileName)-4])
+		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
-			fileName, done := services.GetYoutubeVideo(fileName)
+			fileName, done := downloader.GetYoutubeVideo(fileName)
 			<-done
 			file, err = os.Open("/config/audio/" + fileName + ".m4a")
 			if err != nil || file == nil {
@@ -103,6 +104,36 @@ func registerRoutes(e *echo.Echo) {
 	log.Info("Starting server on " + host + ": " + port)
 	e.Logger.Fatal(e.Start(host + ":" + port))
 
+}
+
+func validateQueryParams(c echo.Context) *models.RssRequestParams {
+	limitVar := c.Request().URL.Query().Get("limit")
+	dateVar := c.Request().URL.Query().Get("date")
+	if !common.IsValidParam(c.Param("channelId")) {
+		c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
+	}
+	if c.Request().URL.Query().Get("limit") != "" && c.Request().URL.Query().Get("date") != "" {
+		c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid parameters"))
+	}
+
+	if limitVar != "" {
+		limitInt, err := strconv.Atoi(c.Request().URL.Query().Get("limit"))
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		return &models.RssRequestParams{Limit: &limitInt, Date: nil}
+	}
+
+	if dateVar != "" {
+		parsedDate, err := time.Parse("01-02-2006", dateVar)
+		if err != nil {
+			log.Error("Error parsing date string:", err)
+			return nil
+		}
+		return &models.RssRequestParams{Limit: nil, Date: &parsedDate}
+	}
+	return &models.RssRequestParams{Limit: nil, Date: nil}
 }
 
 func checkAuthentication(c echo.Context) {
@@ -144,7 +175,7 @@ func setupHandlers(e *echo.Echo) {
 			if value, ok := os.LookupEnv("TRUSTED_HOSTS"); ok && value != "" {
 				log.Info("[AUTH] Checking hosts...")
 				host := c.Request().Host
-				if !contains(strings.Split(value, ","), host) {
+				if !common.Contains(strings.Split(value, ","), host) {
 					log.Error("[AUTH] Invalid host")
 					return echo.NewHTTPError(http.StatusForbidden, "Forbidden")
 				}
@@ -178,15 +209,6 @@ func setupHandlers(e *echo.Echo) {
 	if value, ok := os.LookupEnv("TOKEN"); ok && value != "" {
 		e.Use(authMiddleware)
 	}
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
 }
 
 func handler(r *http.Request) string {

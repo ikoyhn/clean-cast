@@ -27,11 +27,12 @@ go.work
 # Exlude development folder
 cmd/app/audio/*
 
-# Exclude temp folder
+# Exclude folders
 cmd/tmp/*
 cmd/app/tmp/*
 tmp/*
 tmp/build-errors.log
+.idea
 
 #Env Files
 *.env

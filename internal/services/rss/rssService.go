@@ -1,10 +1,14 @@
-package services
+package rss
 
 import (
 	"encoding/xml"
 	"fmt"
+	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
+	"ikoyhn/podcast-sponsorblock/internal/services/channel"
+	"ikoyhn/podcast-sponsorblock/internal/services/generator"
+	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -24,7 +28,7 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 	}
 
 	now := time.Now()
-	ytPodcast := New(podcast.PodcastName, podcastLink, podcast.Description, &now)
+	ytPodcast := generator.New(podcast.PodcastName, podcastLink, podcast.Description, &now)
 	ytPodcast.AddImage(transformArtworkURL(podcast.ImageUrl, 1000, 1000))
 	ytPodcast.AddCategory(podcast.Category, []string{""})
 	ytPodcast.Docs = "http://www.rssboard.org/rss-specification"
@@ -40,19 +44,17 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			if os.Getenv("TOKEN") != "" {
 				mediaUrl = mediaUrl + "?token=" + os.Getenv("TOKEN")
 			}
-			enclosure := Enclosure{
+			enclosure := generator.Enclosure{
 				URL:    mediaUrl,
 				Length: 0,
-				Type:   M4A,
+				Type:   generator.M4A,
 			}
 
 			var builder strings.Builder
 			xml.EscapeText(&builder, []byte(podcastEpisode.EpisodeDescription))
 			escapedDescription := builder.String()
 
-			parseTime := parseTimeFromString(podcastEpisode.PublishedDate)
-
-			podcastItem := Item{
+			podcastItem := generator.Item{
 				Title:       podcastEpisode.EpisodeName,
 				Description: escapedDescription,
 				GUID: struct {
@@ -63,7 +65,7 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 					IsPermaLink: false,
 				},
 				Enclosure: &enclosure,
-				PubDate:   &parseTime,
+				PubDate:   &podcastEpisode.PublishedDate,
 			}
 			ytPodcast.AddItem(podcastItem)
 		}
@@ -72,12 +74,26 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 	return ytPodcast.Bytes()
 }
 
-func parseTimeFromString(date string) time.Time {
-	parseTime, err := time.Parse(time.RFC3339, date)
+func BuildChannelRssFeed(channelId string, params *models.RssRequestParams, host string) []byte {
+	log.Info("[RSS FEED] Building rss feed for channel...")
+	service := youtube.SetupYoutubeService()
+
+	podcast := youtube.GetChannelData(channelId, service, false)
+
+	channel.GetChannelMetadataAndVideos(podcast.Id, service, params)
+	episodes, err := database.GetPodcastEpisodesByPodcastId(podcast.Id)
 	if err != nil {
-		log.Error("Failed to parse time: " + date)
+		log.Error(err)
+		return nil
 	}
-	return parseTime
+
+	podcastRss := BuildPodcast(podcast, episodes)
+	return GenerateRssFeed(podcastRss, host, enum.CHANNEL)
+}
+
+func BuildPodcast(podcast models.Podcast, allItems []models.PodcastEpisode) models.Podcast {
+	podcast.PodcastEpisodes = allItems
+	return podcast
 }
 
 func transformArtworkURL(artworkURL string, newHeight int, newWidth int) string {
