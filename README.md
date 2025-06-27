@@ -133,6 +133,7 @@ Below is a guide to get the application running
 	-  **Playlist**: If you are building a podcast URL using a playlist use the `/rss`endpoint. * Following the TigerBelly example where this app is running on `http://localhost:8080` the url would be `http://localhost:8080/rss/PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222`
 			
 	 - **Channel**: If you are building a podcast URL using a channel ID use the `/channel` endpoint. An example would be `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA`
+       - **WARNING**: When using the channel endpoint you can easily max your Youtube API v3 quota. To reduce the chance use the URL param `date=MM-DD-YYYY`, this will give you an RSS feed of all videos published AFTER the date. Example url would look like `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA?date=06-01-2025`
 
 *  **NOTE:** If you have the docker var `-e TOKEN=<secure token>` set you must add the token as a query param to this url. Ex: `http://localhost:8080/rss/PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222?token=secureToken`
 

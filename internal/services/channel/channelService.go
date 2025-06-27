@@ -33,11 +33,9 @@ func GetChannelMetadataAndVideos(channelId string, service *ytApi.Service, param
 		if oldestSavedEpisode != nil {
 			if latestSavedEpisode.PublishedDate.After(*params.Date) {
 				getChannelVideosByDateRange(service, channelId, time.Now(), *params.Date)
-			} else {
-				getChannelVideosByDateRange(service, channelId, time.Now(), oldestSavedEpisode.PublishedDate)
-			}
-			if oldestSavedEpisode.PublishedDate.After(*params.Date) {
+			} else if oldestSavedEpisode.PublishedDate.After(*params.Date) {
 				getChannelVideosByDateRange(service, channelId, oldestSavedEpisode.PublishedDate, *params.Date)
+				getChannelVideosByDateRange(service, channelId, time.Now(), latestSavedEpisode.PublishedDate)
 			}
 		} else {
 			getChannelVideosByDateRange(service, channelId, time.Now(), *params.Date)
