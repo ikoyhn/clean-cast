@@ -76,7 +76,15 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 }
 
 func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
-	videoResponse := GetVideoDetails(service, videoIdsNotSaved)
+	videoCall := service.Videos.List([]string{"id,snippet,contentDetails"}).
+		Id(videoIdsNotSaved...).
+		MaxResults(int64(len(videoIdsNotSaved)))
+
+	videoResponse, err := videoCall.Do()
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
 
 	for _, item := range videoResponse.Items {
 		if item.Id != "" {
@@ -94,19 +102,6 @@ func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, miss
 		}
 	}
 	return missingVideos
-}
-
-func GetVideoDetails(service *ytApi.Service, videoIdsNotSaved []string) *ytApi.VideoListResponse {
-	videoCall := service.Videos.List([]string{"id,snippet,contentDetails"}).
-		Id(videoIdsNotSaved...).
-		MaxResults(int64(len(videoIdsNotSaved)))
-
-	videoResponse, err := videoCall.Do()
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-	return videoResponse
 }
 
 func FindChannel(channelID string, service *ytApi.Service) bool {

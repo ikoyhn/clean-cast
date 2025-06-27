@@ -31,7 +31,11 @@ func GetChannelMetadataAndVideos(channelId string, service *ytApi.Service, param
 			return
 		}
 		if oldestSavedEpisode != nil {
-			getChannelVideosByDateRange(service, channelId, time.Now(), oldestSavedEpisode.PublishedDate)
+			if latestSavedEpisode.PublishedDate.After(*params.Date) {
+				getChannelVideosByDateRange(service, channelId, time.Now(), *params.Date)
+			} else {
+				getChannelVideosByDateRange(service, channelId, time.Now(), oldestSavedEpisode.PublishedDate)
+			}
 			if oldestSavedEpisode.PublishedDate.After(*params.Date) {
 				getChannelVideosByDateRange(service, channelId, oldestSavedEpisode.PublishedDate, *params.Date)
 			}
@@ -43,41 +47,47 @@ func GetChannelMetadataAndVideos(channelId string, service *ytApi.Service, param
 			getChannelVideosByDateRange(service, channelId, time.Now(), latestSavedEpisode.PublishedDate)
 			getChannelVideosByDateRange(service, channelId, oldestSavedEpisode.PublishedDate, time.Unix(0, 0))
 		} else {
-			getChannelVideosByDateRange(service, channelId, time.Now(), time.Unix(0, 0))
+			getChannelVideosByDateRange(service, channelId, time.Unix(0, 0), time.Unix(0, 0))
 		}
 	}
 }
 
 func getChannelVideosByDateRange(service *ytApi.Service, channelID string, beforeDateParam time.Time, afterDateParam time.Time) {
-	var pageToken string
-	var videoIdsNotSaved []string
+
 	savedEpisodeIds, err := database.GetAllPodcastEpisodeIds(channelID)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
+	nextPageToken := ""
 	for {
-		channelVideosCall := service.Search.List([]string{"snippet"}).
+		var videoIdsNotSaved []string
+		searchCall := service.Search.List([]string{"id", "snippet"}).
 			ChannelId(channelID).
-			PublishedAfter(afterDateParam.Format(time.RFC3339)).
-			PublishedBefore(beforeDateParam.Format(time.RFC3339)).
-			Order("date")
-		if pageToken != "" {
-			channelVideosCall.PageToken(pageToken)
+			Type("video").
+			Order("date").
+			MaxResults(50).
+			PageToken(nextPageToken)
+		if !afterDateParam.IsZero() {
+			searchCall = searchCall.PublishedAfter(afterDateParam.Format(time.RFC3339))
 		}
-		channelVideoResponse, err := channelVideosCall.Do()
+		if !beforeDateParam.IsZero() {
+			searchCall = searchCall.PublishedBefore(beforeDateParam.Format(time.RFC3339))
+		}
+		searchCallResponse, err := searchCall.Do()
 		if err != nil {
 			log.Error(err)
 			return
 		}
 
-		videoIdsNotSaved = append(videoIdsNotSaved, getValidVideosFromChannelResponse(channelVideoResponse, savedEpisodeIds)...)
-		fetchAndSaveVideos(service, videoIdsNotSaved, channelVideoResponse, &pageToken)
+		videoIdsNotSaved = append(videoIdsNotSaved, getValidVideosFromChannelResponse(searchCallResponse, savedEpisodeIds)...)
+		if videoIdsNotSaved != nil && len(videoIdsNotSaved) > 0 {
+			fetchAndSaveVideos(service, videoIdsNotSaved)
+		}
 
-		if channelVideoResponse.NextPageToken != "" {
-			pageToken = channelVideoResponse.NextPageToken
-		} else {
+		nextPageToken = searchCallResponse.NextPageToken
+		if nextPageToken == "" {
 			break
 		}
 	}
@@ -96,15 +106,13 @@ func getValidVideosFromChannelResponse(channelVideoResponse *ytApi.SearchListRes
 	return videoIds
 }
 
-func fetchAndSaveVideos(service *ytApi.Service, videoIdsNotSaved []string, channelVideoResponse *ytApi.SearchListResponse, pageToken *string) {
+func fetchAndSaveVideos(service *ytApi.Service, videoIdsNotSaved []string) {
 	var missingVideos []models.PodcastEpisode
 	missingVideos = youtube.GetVideoAndValidate(service, videoIdsNotSaved, missingVideos)
 
 	if len(missingVideos) > 0 {
 		database.SavePlaylistEpisodes(missingVideos)
 	}
-
-	*pageToken = channelVideoResponse.NextPageToken
 }
 
 func determineRequestType(params *models.RssRequestParams) enum.PodcastFetchType {

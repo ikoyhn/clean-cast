@@ -1,4 +1,4 @@
-package services
+package apple
 
 import (
 	"encoding/json"
@@ -8,12 +8,11 @@ import (
 	"net/http"
 	"strings"
 
-	log "github.com/labstack/gommon/log"
+	"github.com/labstack/gommon/log"
 )
 
 const ITUNES_SEARCH_URL = "https://itunes.apple.com/search?term=%s&limit=1&media=podcast&callback="
 
-// Apple API lookup for podcast metadata
 func GetApplePodcastData(podcastName string) LookupResponse {
 	log.Debug("[RSS FEED] Looking up podcast in Apple Search API...")
 	resp, err := http.Get(fmt.Sprintf(ITUNES_SEARCH_URL, strings.ReplaceAll(podcastName, " ", "")))

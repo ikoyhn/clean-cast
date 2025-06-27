@@ -73,7 +73,7 @@ func IsEpisodeSaved(item *ytApi.Video) bool {
 
 func GetPodcastEpisodesByPodcastId(podcastId string) ([]models.PodcastEpisode, error) {
 	var episodes []models.PodcastEpisode
-	err := db.Where("podcast_id = ?", podcastId).Find(&episodes).Error
+	err := db.Where("podcast_id = ?", podcastId).Order("published_date DESC").Find(&episodes).Error
 	if err != nil {
 		return nil, err
 	}
