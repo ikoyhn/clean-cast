@@ -23,7 +23,6 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -234,6 +233,5 @@ Jared Lynch - jaredlynch13@gmail.com
 [license-shield]: https://img.shields.io/github/license/ikoyhn/clean-cast.svg?style=for-the-badge
 [license-url]: https://github.com/ikoyhn/clean-cast/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://www.linkedin.com/in/jared-lynch1998/
 [golang.com]: https://img.shields.io/badge/Go-00ADD8?logo=Go&logoColor=white&style=for-the-badge
 [golang-url]: https://go.dev
