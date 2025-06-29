@@ -30,7 +30,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">
+  <a href="https://github.com/ikoyhn/clean-cast">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -39,14 +39,14 @@
   <p align="center">
     Podcasting, purified
     <br />
-    <a href="https://github.com/ikoyhn/go-podcast-sponsor-block"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/ikoyhn/clean-cast"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <!-- <a href="https://github.com/ikoyhn/go-podcast-sponsor-block">View Demo</a>
+    <!-- <a href="https://github.com/ikoyhn/clean-cast">View Demo</a>
     &middot; -->
-    <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/ikoyhn/clean-cast/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/ikoyhn/go-podcast-sponsor-block/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/ikoyhn/clean-cast/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -111,9 +111,9 @@ Below is a guide to get the application running
 
 ### Running the App
 
-1. Build out your Docker run command (For more Docker variables and compose examples go [here](https://github.com/ikoyhn/go-podcast-sponsor-block/blob/main/DOCKER-CONFIG.md))
+1. Build out your Docker run command (For more Docker variables and compose examples go [here](https://github.com/ikoyhn/clean-cast/blob/main/DOCKER-CONFIG.md))
     - ```
-      docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/go-podcast-sponsor-block
+      docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/clean-cast
       ```
 2. Run the command to start the app up
 
@@ -140,9 +140,11 @@ Below is a guide to get the application running
 
 3. With this URL you can now add this to any of your favorite podcast apps that accept custom RSS feeds (Apple Podcasts app, VLC Media Player, etc)
 
+### IOS Users
+Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here](https://github.com/ikoyhn/clean-cast/discussions/59) in the discussions tab to allow for generating your RSS feeds easier. View the comments to ensure you are using the most up-to-date version of the shortcut. _Please post any issues related to the shortcut in the discussion_.
+
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -154,14 +156,14 @@ Below is a guide to get the application running
     - [ ] Managing saved podcasts
     - [ ] Allow user to set docker variables in UI
 - [ ] Improve YT API Efficiency
-    - [ ] Add user defined max videos to grab
+    - [ ] Add user defined max videos to grab (by date)
     - [ ] Allow for multiple YT API keys 
 - [ ] Implement proper authenticaton (Username/Password)
 - [ ] Create IOS App (stretch goal)
 - [ ] Create Android App (stretch goal)
 
 
-See the [open issues](https://github.com/ikoyhn/go-podcast-sponsor-block/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/ikoyhn/clean-cast/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -185,8 +187,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/ikoyhn/go-podcast-sponsor-block/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ikoyhn/go-podcast-sponsor-block" alt="contrib.rocks image" />
+<a href="https://github.com/ikoyhn/clean-cast/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ikoyhn/clean-cast" alt="contrib.rocks image" />
 </a>
 
 
@@ -205,8 +207,6 @@ Distributed under the MIT. See `LICENSE.txt` for more information.
 
 Jared Lynch - jaredlynch13@gmail.com
 
-Project Link: [https://github.com/ikoyhn/go-podcast-sponsor-block](https://github.com/ikoyhn/go-podcast-sponsor-block)
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -223,16 +223,16 @@ Project Link: [https://github.com/ikoyhn/go-podcast-sponsor-block](https://githu
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
-[contributors-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
-[forks-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/network/members
-[stars-shield]: https://img.shields.io/github/stars/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
-[stars-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/stargazers
-[issues-shield]: https://img.shields.io/github/issues/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
-[issues-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/issues
-[license-shield]: https://img.shields.io/github/license/ikoyhn/go-podcast-sponsor-block.svg?style=for-the-badge
-[license-url]: https://github.com/ikoyhn/go-podcast-sponsor-block/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/ikoyhn/clean-cast.svg?style=for-the-badge
+[contributors-url]: https://github.com/ikoyhn/clean-cast/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/ikoyhn/clean-cast.svg?style=for-the-badge
+[forks-url]: https://github.com/ikoyhn/clean-cast/network/members
+[stars-shield]: https://img.shields.io/github/stars/ikoyhn/clean-cast.svg?style=for-the-badge
+[stars-url]: https://github.com/ikoyhn/clean-cast/stargazers
+[issues-shield]: https://img.shields.io/github/issues/ikoyhn/clean-cast.svg?style=for-the-badge
+[issues-url]: https://github.com/ikoyhn/clean-cast/issues
+[license-shield]: https://img.shields.io/github/license/ikoyhn/clean-cast.svg?style=for-the-badge
+[license-url]: https://github.com/ikoyhn/clean-cast/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/jared-lynch1998/
 [golang.com]: https://img.shields.io/badge/Go-00ADD8?logo=Go&logoColor=white&style=for-the-badge

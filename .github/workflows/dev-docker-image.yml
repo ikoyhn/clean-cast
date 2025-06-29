@@ -18,4 +18,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:dev
+          tags: ${{ secrets.DOCKER_USERNAME }}/clean-cast:dev

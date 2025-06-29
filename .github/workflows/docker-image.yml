@@ -23,5 +23,6 @@ jobs:
         with:
           context: .
           push: true
-
-          tags: ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:latest
+            ${{ secrets.DOCKER_USERNAME }}/clean-cast:latest
