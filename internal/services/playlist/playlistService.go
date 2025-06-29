@@ -38,7 +38,7 @@ func getYoutubePlaylistData(youtubePlaylistId string, service *ytApi.Service) {
 	pageToken := "first_call"
 
 	for continueRequestingPlaylistItems {
-		call := service.PlaylistItems.List([]string{"snippet", "status"}).
+		call := service.PlaylistItems.List([]string{"snippet", "status", "contentDetails"}).
 			PlaylistId(youtubePlaylistId).
 			MaxResults(50)
 		call.Header().Set("order", "publishedAt desc")

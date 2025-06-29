@@ -39,7 +39,8 @@ type EpisodePlaybackHistory struct {
 }
 
 func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
-	publishedAt, err := time.Parse("2006-01-02T15:04:05Z07:00", youtubeVideo.Snippet.PublishedAt)
+	// For PlaylistItems, use VideoPublishedAt for the actual publication date
+	publishedAt, err := time.Parse("2006-01-02T15:04:05Z07:00", youtubeVideo.ContentDetails.VideoPublishedAt)
 	if err != nil {
 		log.Error(err)
 	}
