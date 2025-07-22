@@ -80,7 +80,7 @@ func getChannelVideosByDateRange(service *ytApi.Service, channelID string, befor
 		}
 
 		videoIdsNotSaved = append(videoIdsNotSaved, getValidVideosFromChannelResponse(searchCallResponse, savedEpisodeIds)...)
-		if videoIdsNotSaved != nil && len(videoIdsNotSaved) > 0 {
+		if len(videoIdsNotSaved) > 0 {
 			fetchAndSaveVideos(service, videoIdsNotSaved)
 		}
 
