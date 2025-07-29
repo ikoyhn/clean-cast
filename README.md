@@ -145,6 +145,11 @@ Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- Issues -->
+## Issues Connecting Your Favorite Podcast App?
+- If you are having issues using your favorite podcast client first check the [Discussions](https://github.com/ikoyhn/clean-cast/discussions) to see if there is a guide to set it up already created, if there isn't please create an new [Issue](https://github.com/ikoyhn/clean-cast/issues).
+- If you have a guide you would like to write to help out others go ahead and create a new discussion with the title template of `{app you are using} App - Setup Guide` 
+
 <!-- ROADMAP -->
 ## Roadmap
 
