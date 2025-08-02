@@ -9,7 +9,7 @@ import (
 	"time"
 
 	log "github.com/labstack/gommon/log"
-	"github.com/lrstanley/go-ytdlp"
+	ytdlp "github.com/lrstanley/go-ytdlp"
 )
 
 var youtubeVideoMutexes = &sync.Map{}
@@ -44,7 +44,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 
 	dl := ytdlp.New().
 		NoProgress().
-		FormatSort("ext::m4a").
+		FormatSort("ext::m4a[format_note*=original]").
 		SponsorblockRemove(categories).
 		ExtractAudio().
 		NoPlaylist().

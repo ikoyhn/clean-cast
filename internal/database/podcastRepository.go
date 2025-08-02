@@ -1,9 +1,10 @@
 package database
 
 import (
+	"ikoyhn/podcast-sponsorblock/internal/models"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"ikoyhn/podcast-sponsorblock/internal/models"
 )
 
 func PodcastExists(podcastId string) (bool, error) {
@@ -34,4 +35,10 @@ func GetPodcast(id string) *models.Podcast {
 
 func SavePodcast(podcast *models.Podcast) {
 	db.Create(&podcast)
+}
+
+func GetAllPodcasts() []models.Podcast {
+	var podcasts []models.Podcast
+	db.Find(&podcasts)
+	return podcasts
 }
