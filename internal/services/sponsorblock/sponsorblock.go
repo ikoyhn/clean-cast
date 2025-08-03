@@ -24,7 +24,7 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 	}
 
 	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
-		os.Remove("/config/audio/" + youtubeVideoId + ".m4a")
+		os.Remove(config.Config.AudioDir + youtubeVideoId + ".m4a")
 		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}

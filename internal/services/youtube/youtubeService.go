@@ -2,10 +2,10 @@ package youtube
 
 import (
 	"context"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
-	"os"
 	"time"
 
 	log "github.com/labstack/gommon/log"
@@ -130,11 +130,7 @@ func FindChannel(channelID string, service *ytApi.Service) bool {
 }
 
 func SetupYoutubeService() *ytApi.Service {
-	apiKey := os.Getenv("GOOGLE_API_KEY")
-	if apiKey == "" {
-		log.Fatalf("GOOGLE_API_KEY is not set")
-	}
-
+	apiKey := config.Config.GoogleApiKey
 	ctx := context.Background()
 	service, err := ytApi.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"os"
 )
 
@@ -30,6 +29,9 @@ func init() {
 
 	cookiesFile := os.Getenv("COOKIES_FILE")
 	Config.CookiesFile = Config.ConfigDir + "/" + cookiesFile
+	if cookiesFile != "" {
+		println("CONFIG | Cookies file set: " + Config.CookiesFile)
+	}
 
 	Config.Token = os.Getenv("TOKEN")
 	if Config.Token != "" {
@@ -38,7 +40,7 @@ func init() {
 
 	Config.GoogleApiKey = os.Getenv("GOOGLE_API_KEY")
 	if Config.GoogleApiKey == "" {
-		panic(errors.New("GOOGLE_API_KEY is not set"))
+		panic("GOOGLE_API_KEY is not set")
 	}
 
 	Config.SponsorBlockCategories = os.Getenv("SPONSORBLOCK_CATEGORIES")
@@ -47,4 +49,7 @@ func init() {
 	}
 
 	Config.Cron = os.Getenv("CRON")
+	if Config.Cron != "" {
+		println("CONFIG | Cron set: " + Config.Cron)
+	}
 }

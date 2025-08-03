@@ -64,7 +64,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		Output(youtubeVideoId + ".%(ext)s")
 
 	if config.Config.CookiesFile != "" {
-		dl.Cookies("/config/" + config.Config.CookiesFile)
+		dl.Cookies(config.Config.CookiesFile)
 	}
 
 	done := make(chan struct{})
