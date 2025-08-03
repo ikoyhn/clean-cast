@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"net/http"
@@ -279,7 +280,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	mutex.(*sync.Mutex).Lock()
 
 	// Check if the file is already being processed
-	filePath := "/config/audio/" + youtubeVideoId + ".m4a"
+	filePath := config.Config.AudioDir + youtubeVideoId + ".m4a"
 	if _, err := os.Stat(filePath); err == nil {
 		mutex.(*sync.Mutex).Unlock()
 		return youtubeVideoId, make(chan struct{})
@@ -289,7 +290,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
 	ytdlp.Install(context.TODO(), nil)
 
-	categories := os.Getenv("SPONSORBLOCK_CATEGORIES")
+	categories := config.Config.SponsorBlockCategories
 	if categories == "" {
 		categories = "sponsor"
 	}
@@ -303,7 +304,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		NoPlaylist().
 		FFmpegLocation("/usr/bin/ffmpeg").
 		Continue().
-		Paths("/config/audio").
+		Paths(config.Config.AudioDir).
 		ProgressFunc(500*time.Millisecond, func(prog ytdlp.ProgressUpdate) {
 			fmt.Printf(
 				"%s @ %s [eta: %s] :: %s\n",
@@ -317,7 +318,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 
 	cookiesFile := strings.TrimSpace(os.Getenv("COOKIES_FILE"))
 	if cookiesFile != "" {
-		dl.Cookies("/config/" + cookiesFile)
+		dl.Cookies(config.Config.CookiesFile)
 	}
 
 	done := make(chan struct{})
@@ -338,10 +339,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 }
 
 func setupYoutubeService() *youtube.Service {
-	apiKey := os.Getenv("GOOGLE_API_KEY")
-	if apiKey == "" {
-		log.Fatalf("GOOGLE_API_KEY is not set")
-	}
+	apiKey := config.Config.GoogleApiKey
 
 	ctx := context.Background()
 	service, err := youtube.NewService(ctx, option.WithAPIKey(apiKey))

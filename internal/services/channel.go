@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"math"
@@ -35,7 +36,7 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 	}
 
 	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
-		os.Remove("/config/audio/" + youtubeVideoId + ".m4a")
+		os.Remove(config.Config.AudioDir + youtubeVideoId + ".m4a")
 		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}

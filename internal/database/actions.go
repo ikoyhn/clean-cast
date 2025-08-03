@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"ikoyhn/podcast-sponsorblock/internal/common"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
 	"time"
@@ -33,7 +34,7 @@ func DeletePodcastCronJob() {
 	db.Where("last_access_date < ?", oneWeekAgo).Find(&histories)
 
 	for _, history := range histories {
-		os.Remove("/config/audio/" + history.YoutubeVideoId + ".m4a")
+		os.Remove(config.Config.AudioDir + history.YoutubeVideoId + ".m4a")
 		db.Delete(&history)
 		log.Info("[DB] Deleted old episode playback history... " + history.YoutubeVideoId)
 	}
@@ -41,14 +42,14 @@ func DeletePodcastCronJob() {
 
 func TrackEpisodeFiles() {
 	log.Info("[DB] Tracking existing episode files...")
-	audioDir := "/config/audio"
-	if _, err := os.Stat(audioDir); os.IsNotExist(err) {
-		os.MkdirAll(audioDir, 0755)
+
+	if _, err := os.Stat(config.Config.AudioDir); os.IsNotExist(err) {
+		os.MkdirAll(config.Config.AudioDir, 0755)
 	}
-	if _, err := os.Stat("/config"); os.IsNotExist(err) {
-		os.MkdirAll("/config", 0755)
+	if _, err := os.Stat(config.Config.ConfigDir); os.IsNotExist(err) {
+		os.MkdirAll(config.Config.ConfigDir, 0755)
 	}
-	files, err := os.ReadDir("/config/audio/")
+	files, err := os.ReadDir(config.Config.AudioDir)
 	if err != nil {
 		log.Fatal(err)
 	}

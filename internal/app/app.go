@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"ikoyhn/podcast-sponsorblock/internal/common"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services"
 	"net/http"
@@ -65,13 +66,14 @@ func registerRoutes(e *echo.Echo) {
 		if !common.IsValidFilename(fileName) {
 			c.Error(echo.ErrNotFound)
 		}
-		file, err := os.Open("/config/audio/" + fileName)
+
+		file, err := os.Open(config.Config.AudioDir + fileName)
 		needRedownload, totalTimeSkipped := services.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 			fileName, done := services.GetYoutubeVideo(fileName)
 			<-done
-			file, err = os.Open("/config/audio/" + fileName + ".m4a")
+			file, err = os.Open(config.Config.AudioDir + fileName + ".m4a")
 			if err != nil || file == nil {
 				return err
 			}
@@ -79,7 +81,7 @@ func registerRoutes(e *echo.Echo) {
 
 			rangeHeader := c.Request().Header.Get("Range")
 			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), "/config/audio/"+fileName+".m4a")
+				http.ServeFile(c.Response().Writer, c.Request(), config.Config.AudioDir+fileName+".m4a")
 				return nil
 			}
 			return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -88,7 +90,7 @@ func registerRoutes(e *echo.Echo) {
 		database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 		rangeHeader := c.Request().Header.Get("Range")
 		if rangeHeader != "" {
-			http.ServeFile(c.Response().Writer, c.Request(), "/config/audio/"+fileName)
+			http.ServeFile(c.Response().Writer, c.Request(), config.Config.AudioDir+fileName)
 			return nil
 		}
 		return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -106,9 +108,9 @@ func registerRoutes(e *echo.Echo) {
 }
 
 func checkAuthentication(c echo.Context) {
-	if os.Getenv("TOKEN") != "" {
+	if config.Config.Token != "" {
 		token := c.Request().URL.Query().Get("token")
-		if token != os.Getenv("TOKEN") {
+		if token != config.Config.Token {
 			c.Error(echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized"))
 		}
 	}
@@ -116,8 +118,8 @@ func checkAuthentication(c echo.Context) {
 
 func setupCron() {
 	cronSchedule := "0 0 * * 0"
-	if os.Getenv("CRON") != "" {
-		cronSchedule = os.Getenv("CRON")
+	if config.Config.Cron != "" {
+		cronSchedule = config.Config.Cron
 	}
 	c := cron.New()
 	c.AddFunc(cronSchedule, func() {
@@ -128,7 +130,7 @@ func setupCron() {
 
 func setupLogging(e *echo.Echo) {
 	//custom logging to exclude showing the token from url
-	if os.Getenv("TOKEN") != "" {
+	if config.Config.Token != "" {
 		logger := middleware.LoggerConfig{
 			Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}","host":"${host}","method":"${method}","path":"${uri.Path}","user_agent":"${user_agent}","status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}","bytes_in":${bytes_in},"bytes_out":${bytes_out}}`,
 		}
