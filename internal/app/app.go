@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
@@ -137,9 +138,9 @@ func validateQueryParams(c echo.Context) *models.RssRequestParams {
 }
 
 func checkAuthentication(c echo.Context) {
-	if os.Getenv("TOKEN") != "" {
+	if config.Config.Token != "" {
 		token := c.Request().URL.Query().Get("token")
-		if token != os.Getenv("TOKEN") {
+		if token != config.Config.Token {
 			c.Error(echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized"))
 		}
 	}
@@ -147,8 +148,8 @@ func checkAuthentication(c echo.Context) {
 
 func setupCron() {
 	cronSchedule := "0 0 * * 0"
-	if os.Getenv("CRON") != "" {
-		cronSchedule = os.Getenv("CRON")
+	if config.Config.Cron != "" {
+		cronSchedule = config.Config.Cron
 	}
 	c := cron.New()
 	c.AddFunc(cronSchedule, func() {
@@ -159,7 +160,7 @@ func setupCron() {
 
 func setupLogging(e *echo.Echo) {
 	//custom logging to exclude showing the token from url
-	if os.Getenv("TOKEN") != "" {
+	if config.Config.Token != "" {
 		logger := middleware.LoggerConfig{
 			Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}","host":"${host}","method":"${method}","path":"${uri.Path}","user_agent":"${user_agent}","status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}","bytes_in":${bytes_in},"bytes_out":${bytes_out}}`,
 		}

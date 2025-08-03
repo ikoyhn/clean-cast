@@ -3,6 +3,7 @@ package rss
 import (
 	"encoding/xml"
 	"fmt"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
@@ -10,7 +11,6 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/services/generator"
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -41,8 +41,8 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			}
 			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
 
-			if os.Getenv("TOKEN") != "" {
-				mediaUrl = mediaUrl + "?token=" + os.Getenv("TOKEN")
+			if config.Config.Token != "" {
+				mediaUrl = mediaUrl + "?token=" + config.Config.Token
 			}
 			enclosure := generator.Enclosure{
 				URL:    mediaUrl,

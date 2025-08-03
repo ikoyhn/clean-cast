@@ -1,11 +1,13 @@
 package database
 
 import (
-	"github.com/labstack/gommon/log"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"os"
 	"time"
+
+	"github.com/labstack/gommon/log"
 )
 
 func UpdateEpisodePlaybackHistory(youtubeVideoId string, totalTimeSkipped float64) {
@@ -27,14 +29,13 @@ func GetEpisodePlaybackHistory(youtubeVideoId string) *models.EpisodePlaybackHis
 
 func TrackEpisodeFiles() {
 	log.Info("[DB] Tracking existing episode files...")
-	audioDir := "/config/audio"
-	if _, err := os.Stat(audioDir); os.IsNotExist(err) {
-		os.MkdirAll(audioDir, 0755)
+	if _, err := os.Stat(config.Config.AudioDir); os.IsNotExist(err) {
+		os.MkdirAll(config.Config.AudioDir, 0755)
 	}
-	if _, err := os.Stat("/config"); os.IsNotExist(err) {
-		os.MkdirAll("/config", 0755)
+	if _, err := os.Stat(config.Config.ConfigDir); os.IsNotExist(err) {
+		os.MkdirAll(config.Config.ConfigDir, 0755)
 	}
-	files, err := os.ReadDir("/config/audio/")
+	files, err := os.ReadDir(config.Config.AudioDir)
 	if err != nil {
 		log.Fatal(err)
 	}

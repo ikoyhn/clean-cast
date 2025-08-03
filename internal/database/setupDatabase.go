@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
 
@@ -24,12 +25,12 @@ func SetupDatabase() {
 	fmt.Println("Current working directory:", dir)
 	var err error
 	// Create the database file if it doesn't exist
-	if _, err := os.Stat("C:/Users/jared/Documents/code/sqlite.db"); os.IsNotExist(err) {
-		err := os.MkdirAll("C:/Users/jared/Documents/code/", os.ModePerm)
+	if _, err := os.Stat(config.Config.DbFile); os.IsNotExist(err) {
+		err := os.MkdirAll(config.Config.ConfigDir, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
-		f, err := os.Create("C:/Users/jared/Documents/code/sqlite.db")
+		f, err := os.Create(config.Config.DbFile)
 		if err != nil {
 			panic(err)
 		}
@@ -39,7 +40,7 @@ func SetupDatabase() {
 		}
 	}
 
-	db, err = gorm.Open(sqlite.Open("C:/Users/jared/Documents/code/sqlite.db"), &gorm.Config{
+	db, err = gorm.Open(sqlite.Open(config.Config.DbFile), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

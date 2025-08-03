@@ -1,13 +1,15 @@
 package database
 
 import (
+	"ikoyhn/podcast-sponsorblock/internal/config"
+	"ikoyhn/podcast-sponsorblock/internal/models"
+	"os"
+	"time"
+
 	"github.com/labstack/gommon/log"
 	"github.com/pkg/errors"
 	ytApi "google.golang.org/api/youtube/v3"
 	"gorm.io/gorm"
-	"ikoyhn/podcast-sponsorblock/internal/models"
-	"os"
-	"time"
 )
 
 func SavePlaylistEpisodes(playlistEpisodes []models.PodcastEpisode) {
@@ -87,7 +89,7 @@ func DeletePodcastCronJob() {
 	db.Where("last_access_date < ?", oneWeekAgo).Find(&histories)
 
 	for _, history := range histories {
-		err := os.Remove("/config/audio/" + history.YoutubeVideoId + ".m4a")
+		err := os.Remove(config.Config.AudioDir + history.YoutubeVideoId + ".m4a")
 		if err != nil {
 			return
 		}
