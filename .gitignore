@@ -36,3 +36,6 @@ tmp/build-errors.log
 
 #Env Files
 *.env
+
+#VSC
+settings.json
