@@ -12,6 +12,7 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/services/sponsorblock"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -67,13 +68,13 @@ func registerRoutes(e *echo.Echo) {
 		if !common.IsValidFilename(fileName) {
 			c.Error(echo.ErrNotFound)
 		}
-		file, err := os.Open(config.Config.AudioDir + fileName)
+		file, err := os.Open(path.Join(config.Config.AudioDir, fileName))
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 			fileName, done := downloader.GetYoutubeVideo(fileName)
 			<-done
-			file, err = os.Open(config.Config.AudioDir + fileName + ".m4a")
+			file, err = os.Open(path.Join(config.Config.AudioDir, fileName+".m4a"))
 			if err != nil || file == nil {
 				return err
 			}
@@ -81,7 +82,7 @@ func registerRoutes(e *echo.Echo) {
 
 			rangeHeader := c.Request().Header.Get("Range")
 			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), config.Config.AudioDir+fileName+".m4a")
+				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.Config.AudioDir, fileName+".m4a"))
 				return nil
 			}
 			return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -90,7 +91,7 @@ func registerRoutes(e *echo.Echo) {
 		database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 		rangeHeader := c.Request().Header.Get("Range")
 		if rangeHeader != "" {
-			http.ServeFile(c.Response().Writer, c.Request(), config.Config.AudioDir+fileName)
+			http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.Config.AudioDir, fileName))
 			return nil
 		}
 		return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -98,7 +99,7 @@ func registerRoutes(e *echo.Echo) {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8082"
 	}
 	host := os.Getenv("HOST")
 

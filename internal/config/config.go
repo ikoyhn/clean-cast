@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path"
 )
 
 type ConfigDef struct {
@@ -24,12 +25,12 @@ func init() {
 	if Config.ConfigDir == "" {
 		Config.ConfigDir = "/config"
 	}
-	Config.AudioDir = Config.ConfigDir + "/audio/"
-	Config.DbFile = Config.ConfigDir + "/sqlite.db"
+	Config.AudioDir = path.Join(Config.ConfigDir, "audio")
+	Config.DbFile = path.Join(Config.ConfigDir, "sqlite.db")
 
 	cookiesFile := os.Getenv("COOKIES_FILE")
-	Config.CookiesFile = Config.ConfigDir + "/" + cookiesFile
 	if cookiesFile != "" {
+		Config.CookiesFile = path.Join(Config.ConfigDir, cookiesFile)
 		println("CONFIG | Cookies file set: " + Config.CookiesFile)
 	}
 

@@ -29,6 +29,7 @@ cmd/app/audio/*
 
 # Exclude folders
 cmd/tmp/*
+cmd/app/__debug_*
 cmd/app/tmp/*
 tmp/*
 tmp/build-errors.log
