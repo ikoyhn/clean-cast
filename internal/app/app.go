@@ -68,9 +68,16 @@ func registerRoutes(e *echo.Echo) {
 		if !common.IsValidFilename(fileName) {
 			c.Error(echo.ErrNotFound)
 		}
+
 		file, err := os.Open(path.Join(config.Config.AudioDir, fileName))
+		log.Info("[DOWNLOAD] Requested file: " + path.Join(config.Config.AudioDir, fileName))
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
+			if (file != nil) || (err == nil) {
+				log.Warn("[DOWNLOAD] File not found: " + fileName)
+			} else {
+				log.Warn("[DOWNLOAD] Redownloading file with updated sponsor skips: " + fileName)
+			}
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 			fileName, done := downloader.GetYoutubeVideo(fileName)
 			<-done
@@ -160,6 +167,7 @@ func setupCron() {
 }
 
 func setupLogging(e *echo.Echo) {
+	log.SetLevel(log.DEBUG) // Set log level to debug
 	//custom logging to exclude showing the token from url
 	if config.Config.Token != "" {
 		logger := middleware.LoggerConfig{

@@ -37,7 +37,7 @@ func TrackEpisodeFiles() {
 	}
 	files, err := os.ReadDir(config.Config.AudioDir)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	dbFiles := make([]string, 0)

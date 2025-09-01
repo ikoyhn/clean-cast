@@ -74,7 +74,12 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 			log.Errorf("Error downloading YouTube video: %v", err)
 		}
 		if r.ExitCode != 0 {
-			log.Errorf("YouTube video download failed with exit code %d", r.ExitCode)
+			filePath := config.Config.AudioDir + youtubeVideoId + ".m4a"
+			if _, statErr := os.Stat(filePath); statErr == nil {
+				log.Warn("Download exited with non-zero code, but file exists: ", filePath)
+			} else {
+				log.Errorf("YouTube video download failed with exit code %d", r.ExitCode)
+			}
 		}
 		mutex.(*sync.Mutex).Unlock()
 

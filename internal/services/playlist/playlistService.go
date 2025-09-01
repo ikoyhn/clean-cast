@@ -32,7 +32,6 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 }
 
 func getYoutubePlaylistData(youtubePlaylistId string, service *ytApi.Service) {
-	log.Info("[RSS FEED] Getting youtube data...")
 	continueRequestingPlaylistItems := true
 	var missingVideos []models.PodcastEpisode
 	pageToken := "first_call"
@@ -49,10 +48,10 @@ func getYoutubePlaylistData(youtubePlaylistId string, service *ytApi.Service) {
 
 		response, ytAgainErr := call.Do()
 		if ytAgainErr != nil {
-			log.Fatalf("Error calling YouTube API: %v. Ensure your API key is valid", response)
+			log.Errorf("Error calling YouTube API for Playlist: %w. Ensure your API key is valid, if your API key is valid you have have reached your API quota. Error: %w", youtubePlaylistId, response)
 		}
 		if response.HTTPStatusCode != http.StatusOK {
-			log.Errorf("YouTube API returned status code %v", response.HTTPStatusCode)
+			log.Errorf("YouTube API returned status code %w for Playlist: %w", response.HTTPStatusCode, youtubePlaylistId)
 			return
 		}
 

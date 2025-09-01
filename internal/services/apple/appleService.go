@@ -17,15 +17,15 @@ func GetApplePodcastData(podcastName string) LookupResponse {
 	log.Debug("[RSS FEED] Looking up podcast in Apple Search API...")
 	resp, err := http.Get(fmt.Sprintf(ITUNES_SEARCH_URL, strings.ReplaceAll(podcastName, " ", "")))
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr != nil {
-		log.Fatal(bodyErr)
+		log.Error(bodyErr)
 	}
 	lookupResponse, marshErr := unmarshalAppleLookupResponse(body)
 	if marshErr != nil {
-		log.Fatal(marshErr)
+		log.Error(marshErr)
 	}
 	return lookupResponse
 }
