@@ -68,6 +68,7 @@ func registerRoutes(e *echo.Echo) {
 		if !common.IsValidFilename(fileName) {
 			c.Error(echo.ErrNotFound)
 		}
+
 		file, err := os.Open(path.Join(config.Config.AudioDir, fileName))
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {

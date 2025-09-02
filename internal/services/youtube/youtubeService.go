@@ -122,7 +122,7 @@ func FindChannel(channelID string, service *ytApi.Service) bool {
 		}
 
 		if len(channelResponse.Items) == 0 {
-			log.Fatal("channel not found")
+			log.Error("channel not found")
 			return false
 		}
 	}
