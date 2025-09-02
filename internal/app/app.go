@@ -161,7 +161,6 @@ func setupCron() {
 }
 
 func setupLogging(e *echo.Echo) {
-	log.SetLevel(log.DEBUG) // Set log level to debug
 	//custom logging to exclude showing the token from url
 	if config.Config.Token != "" {
 		logger := middleware.LoggerConfig{
