@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -69,17 +70,19 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 
 	done := make(chan struct{})
 	go func() {
-		r, err := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
-		if err != nil {
-			log.Errorf("Error downloading YouTube video: %v", err)
-		}
+		r, dlErr := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
+
 		if r.ExitCode != 0 {
-			filePath := config.Config.AudioDir + youtubeVideoId + ".m4a"
-			if _, statErr := os.Stat(filePath); statErr == nil {
+			file, err := os.Open(path.Join(config.Config.AudioDir, youtubeVideoId+".m4a"))
+			if file != nil || err == nil {
 				log.Warn("Download exited with non-zero code, but file exists: ", filePath)
 			} else {
-				log.Errorf("YouTube video download failed with exit code %d", r.ExitCode)
+				if dlErr != nil {
+					log.Errorf("Error downloading YouTube video: %v", dlErr)
+				}
 			}
+		} else {
+			log.Infof(" %w Download completed successfully.", youtubeVideoId)
 		}
 		mutex.(*sync.Mutex).Unlock()
 
