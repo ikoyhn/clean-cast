@@ -23,7 +23,9 @@ import (
 
 func registerRoutes(e *echo.Echo) {
 	e.GET("/channel/:channelId", func(c echo.Context) error {
-		checkAuthentication(c)
+		if err := checkAuthentication(c); err != nil {
+			return err
+		}
 		rssRequestParams := validateQueryParams(c)
 		data := rss.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
@@ -33,7 +35,9 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
-		checkAuthentication(c)
+		if err := checkAuthentication(c); err != nil {
+			return err
+		}
 		validateQueryParams(c)
 		data := playlist.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
@@ -43,7 +47,9 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/media/:youtubeVideoId", func(c echo.Context) error {
-		checkAuthentication(c)
+		if err := checkAuthentication(c); err != nil {
+			return err
+		}
 
 		fileName := c.Param("youtubeVideoId")
 		if !common.IsValidParam(fileName) {
@@ -123,15 +129,6 @@ func validateQueryParams(c echo.Context) *models.RssRequestParams {
 	return &models.RssRequestParams{Limit: nil, Date: nil}
 }
 
-func checkAuthentication(c echo.Context) {
-	if config.Config.Token != "" {
-		token := c.Request().URL.Query().Get("token")
-		if token != config.Config.Token {
-			c.Error(echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized"))
-		}
-	}
-}
-
 func setupCron() {
 	cronSchedule := "0 0 * * 0"
 	if config.Config.Cron != "" {
@@ -159,30 +156,8 @@ func setupHandlers(e *echo.Echo) {
 		}
 	}
 
-	authMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if value, ok := os.LookupEnv("TOKEN"); ok && value != "" {
-				log.Info("[AUTH] Checking authentication...")
-				authHeader := c.Request().URL.Query().Get("token")
-				if authHeader == "" {
-					log.Error("[AUTH] Auth not found")
-					return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
-				}
-				if authHeader != value {
-					log.Error("[AUTH] Auth not valid")
-					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
-				}
-			}
-			return next(c)
-		}
-	}
-
 	if value, ok := os.LookupEnv("TRUSTED_HOSTS"); ok && value != "" {
 		e.Use(hostMiddleware)
-	}
-
-	if value, ok := os.LookupEnv("TOKEN"); ok && value != "" {
-		e.Use(authMiddleware)
 	}
 }
 
@@ -196,4 +171,51 @@ func handler(r *http.Request) string {
 	host := r.Host
 	url := scheme + "://" + host
 	return url
+}
+
+func checkAuthentication(c echo.Context) error {
+	tokenConfigured := config.Authentication.Token != ""
+	basicConfigured := config.Authentication.BasicAuth.Password != ""
+
+	// If no authentication configured, allow through
+	if !tokenConfigured && !basicConfigured {
+		return nil
+	}
+
+	// If both basic and token are configured, accept either method (Basic OR token)
+	if basicConfigured && tokenConfigured {
+		user, pass, ok := c.Request().BasicAuth()
+		token := c.Request().URL.Query().Get("token")
+
+		basicOk := ok && pass == config.Authentication.BasicAuth.Password
+		if config.Authentication.BasicAuth.Username != "" {
+			basicOk = basicOk && user == config.Authentication.BasicAuth.Username
+		}
+
+		tokenOk := token == config.Authentication.Token
+
+		if basicOk || tokenOk {
+			return nil
+		}
+
+		return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	if basicConfigured {
+		_, pass, ok := c.Request().BasicAuth()
+		if ok && pass == config.Authentication.BasicAuth.Password {
+			return nil
+		}
+		return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	if tokenConfigured {
+		token := c.Request().URL.Query().Get("token")
+		if token == config.Authentication.Token {
+			return nil
+		}
+		return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
 }

@@ -5,6 +5,7 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
+	"path"
 	"time"
 
 	"github.com/labstack/gommon/log"
@@ -107,11 +108,22 @@ func DeletePodcastCronJob() {
 	db.Where("last_access_date < ?", oneWeekAgo).Find(&histories)
 
 	for _, history := range histories {
-		err := os.Remove(config.Config.AudioDir + history.YoutubeVideoId + ".m4a")
+		filePath := path.Join(config.Config.AudioDir, history.YoutubeVideoId+".m4a")
+		err := os.Remove(filePath)
 		if err != nil {
-			return
+			if os.IsNotExist(err) {
+				log.Debug("[DB] File not found when attempting to delete: " + filePath)
+			} else {
+				log.Warn("[DB] Failed to remove file: " + filePath + " error: " + err.Error())
+			}
 		}
-		db.Delete(&history)
+
+		if delErr := db.Delete(&history).Error; delErr != nil {
+			log.Error("[DB] Failed to delete playback history for " + history.YoutubeVideoId + ": " + delErr.Error())
+			// continue processing other histories even if delete failed
+			continue
+		}
+
 		log.Info("[DB] Deleted old episode playback history... " + history.YoutubeVideoId)
 	}
 }

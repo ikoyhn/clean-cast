@@ -41,8 +41,8 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			}
 			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
 
-			if config.Config.Token != "" {
-				mediaUrl = mediaUrl + "?token=" + config.Config.Token
+			if config.Authentication.Token != "" {
+				mediaUrl = mediaUrl + "?token=" + config.Authentication.Token
 			}
 			enclosure := generator.Enclosure{
 				URL:    mediaUrl,

@@ -1,0 +1,50 @@
+name: Go unit tests
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.20, 1.21]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Cache modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ${{ env.GOMODCACHE }}
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: Prepare config dir
+        env:
+          CONFIG_DIR: ${{ github.workspace }}/config
+        run: |
+          mkdir -p "$CONFIG_DIR"
+          touch "$CONFIG_DIR/properties.yml"
+
+      - name: Run tests
+        env:
+          CONFIG_DIR: ${{ github.workspace }}/config
+          GOOGLE_API_KEY: dummy_key
+        run: |
+          go test ./... -v
