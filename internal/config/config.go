@@ -14,6 +14,7 @@ type ConfigDef struct {
 	GoogleApiKey           string
 	SponsorBlockCategories string
 	Cron                   string
+	MinDuration            string
 }
 
 var Config *ConfigDef
@@ -52,5 +53,10 @@ func init() {
 	Config.Cron = os.Getenv("CRON")
 	if Config.Cron != "" {
 		println("CONFIG | Cron set: " + Config.Cron)
+	}
+
+	Config.MinDuration = os.Getenv("MIN_DURATION")
+	if Config.MinDuration == "" {
+		Config.MinDuration = "3m"
 	}
 }
