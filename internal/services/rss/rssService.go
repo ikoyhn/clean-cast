@@ -81,7 +81,7 @@ func BuildChannelRssFeed(channelId string, params *models.RssRequestParams, host
 	podcast := youtube.GetChannelData(channelId, service, false)
 
 	channel.GetChannelMetadataAndVideos(podcast.Id, service, params)
-	episodes, err := database.GetPodcastEpisodesByPodcastId(podcast.Id)
+	episodes, err := database.GetPodcastEpisodesByPodcastId(podcast.Id, enum.CHANNEL)
 	if err != nil {
 		log.Error(err)
 		return nil

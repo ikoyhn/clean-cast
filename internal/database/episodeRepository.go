@@ -2,6 +2,7 @@ package database
 
 import (
 	"ikoyhn/podcast-sponsorblock/internal/config"
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
 	"time"
@@ -73,19 +74,29 @@ func IsEpisodeSaved(item *ytApi.Video) bool {
 	return false
 }
 
-func GetPodcastEpisodesByPodcastId(podcastId string) ([]models.PodcastEpisode, error) {
+func GetPodcastEpisodesByPodcastId(podcastId string, podcastType enum.PodcastType) ([]models.PodcastEpisode, error) {
 	var episodes []models.PodcastEpisode
-	dur, err := time.ParseDuration(config.Config.MinDuration)
-	if err != nil {
-		return nil, err
+	if podcastType == enum.PLAYLIST {
+		err := db.Where("podcast_id = ?", podcastId).
+			Order("published_date DESC").
+			Find(&episodes).Error
+		if err != nil {
+			return nil, err
+		}
+	} else if podcastType == enum.CHANNEL {
+		dur, err := time.ParseDuration(config.Config.MinDuration)
+		if err != nil {
+			return nil, err
+		}
+
+		err = db.Where("podcast_id = ? AND duration >= ?", podcastId, dur).
+			Order("published_date DESC").
+			Find(&episodes).Error
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err = db.Where("podcast_id = ? AND duration >= ?", podcastId, dur).
-		Order("published_date DESC").
-		Find(&episodes).Error
-	if err != nil {
-		return nil, err
-	}
 	return episodes, nil
 }
 
