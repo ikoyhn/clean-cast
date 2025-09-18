@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
@@ -14,15 +13,6 @@ import (
 var db *gorm.DB
 
 func SetupDatabase() {
-	// Get the current working directory.
-	dir, err1 := os.Getwd()
-	if err1 != nil {
-		fmt.Println("Error getting current directory:", err1)
-		return
-	}
-
-	// Print the current working directory.
-	fmt.Println("Current working directory:", dir)
 	var err error
 	// Create the database file if it doesn't exist
 	if _, err := os.Stat(config.Config.DbFile); os.IsNotExist(err) {

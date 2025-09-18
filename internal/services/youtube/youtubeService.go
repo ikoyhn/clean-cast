@@ -86,6 +86,11 @@ func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, miss
 		return nil
 	}
 
+	dur, err := time.ParseDuration(config.Config.MinDuration)
+	if err != nil {
+		panic("Invalid MIN_DURATION format. Use formats like '5m', '1h', '400s'.")
+	}
+
 	for _, item := range videoResponse.Items {
 		if item.Id != "" {
 			duration, err := common.ParseDuration(item.ContentDetails.Duration)
@@ -93,7 +98,8 @@ func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, miss
 				log.Error(err)
 				continue
 			}
-			if duration.Seconds() > 1000 {
+
+			if duration.Seconds() > dur.Seconds() {
 				if database.IsEpisodeSaved(item) {
 					return missingVideos
 				}
