@@ -21,7 +21,7 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	podcast := youtube.GetChannelData(youtubePlaylistId, service, true)
 
 	getYoutubePlaylistData(youtubePlaylistId, service)
-	episodes, err := database.GetPodcastEpisodesByPodcastId(youtubePlaylistId)
+	episodes, err := database.GetPodcastEpisodesByPodcastId(youtubePlaylistId, enum.PLAYLIST)
 	if err != nil {
 		log.Error(err)
 		return nil
