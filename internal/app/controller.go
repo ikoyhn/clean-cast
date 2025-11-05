@@ -22,7 +22,11 @@ import (
 )
 
 func registerRoutes(e *echo.Echo) {
-	e.GET("/channel/:channelId", func(c echo.Context) error {
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, World!")
+	})
+
+e.GET("/channel/:channelId", func(c echo.Context) error {
 		
 		rssRequestParams := validateQueryParams(c)
 		data := rss.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
