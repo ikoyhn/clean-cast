@@ -145,45 +145,7 @@ func setupCron() {
 }
 
 func setupHandlers(e *echo.Echo) {
-	hostMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if value, ok := os.LookupEnv("TRUSTED_HOSTS"); ok && value != "" {
-				log.Info("[AUTH] Checking hosts...")
-				host := c.Request().Host
-				if !common.Contains(strings.Split(value, ","), host) {
-					log.Error("[AUTH] Invalid host")
-					return echo.NewHTTPError(http.StatusForbidden, "Forbidden")
-				}
-			}
-			return next(c)
-		}
-	}
 
-	authMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if value, ok := os.LookupEnv("TOKEN"); ok && value != "" {
-				log.Info("[AUTH] Checking authentication...")
-				authHeader := c.Request().URL.Query().Get("token")
-				if authHeader == "" {
-					log.Error("[AUTH] Auth not found")
-					return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
-				}
-				if authHeader != value {
-					log.Error("[AUTH] Auth not valid")
-					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
-				}
-			}
-			return next(c)
-		}
-	}
-
-	if value, ok := os.LookupEnv("TRUSTED_HOSTS"); ok && value != "" {
-		e.Use(hostMiddleware)
-	}
-
-	if value, ok := os.LookupEnv("TOKEN"); ok && value != "" {
-		e.Use(authMiddleware)
-	}
 }
 
 func handler(r *http.Request) string {
