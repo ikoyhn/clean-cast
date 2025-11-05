@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  clean-cast:
+    build: .
+    #image:
+    container_name: clean-cast
+    ports:
+      - "8080:8080"
+    environment:
+      - GOOGLE_API_KEY=<API KEY>
+      - TRUSTED_HOSTS=<HOST>
+      - TOKEN=<GENERATE SECURE TOKE>
+      - CRON=0 0 * * 0
+      - SPONSORBLOCK_CATEGORIES=sponsor
+      - COOKIES_FILE=<FILENAME>
+    volumes:
+      - /DL PATH>:/config
