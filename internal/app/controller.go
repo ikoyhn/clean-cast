@@ -23,7 +23,7 @@ import (
 
 func registerRoutes(e *echo.Echo) {
 	e.GET("/channel/:channelId", func(c echo.Context) error {
-		checkAuthentication(c)
+		
 		rssRequestParams := validateQueryParams(c)
 		data := rss.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
@@ -33,7 +33,6 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/rss/:youtubePlaylistId", func(c echo.Context) error {
-		checkAuthentication(c)
 		validateQueryParams(c)
 		data := playlist.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
@@ -43,9 +42,7 @@ func registerRoutes(e *echo.Echo) {
 	})
 
 	e.GET("/media/:youtubeVideoId", func(c echo.Context) error {
-		checkAuthentication(c)
-
-		fileName := c.Param("youtubeVideoId")
+				fileName := c.Param("youtubeVideoId")
 		if !common.IsValidParam(fileName) {
 			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
 		}
@@ -123,14 +120,7 @@ func validateQueryParams(c echo.Context) *models.RssRequestParams {
 	return &models.RssRequestParams{Limit: nil, Date: nil}
 }
 
-func checkAuthentication(c echo.Context) {
-	if config.Config.Token != "" {
-		token := c.Request().URL.Query().Get("token")
-		if token != config.Config.Token {
-			c.Error(echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized"))
-		}
-	}
-}
+
 
 func setupCron() {
 	cronSchedule := "0 0 * * 0"
