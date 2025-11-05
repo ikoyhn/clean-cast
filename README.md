@@ -134,7 +134,7 @@ Below is a guide to get the application running
 	 - **Channel**: If you are building a podcast URL using a channel ID use the `/channel` endpoint. An example would be `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA`
        - **WARNING**: When using the channel endpoint you can easily max your Youtube API v3 quota. To reduce the chance use the URL param `date=MM-DD-YYYY`, this will give you an RSS feed of all videos published AFTER the date. Example url would look like `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA?date=06-01-2025`
 
-*  **NOTE:** If you have the docker var `-e TOKEN=<secure token>` set you must add the token as a query param to this url. Ex: `http://localhost:8080/rss/PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222?token=secureToken`
+
 
 
 3. With this URL you can now add this to any of your favorite podcast apps that accept custom RSS feeds (Apple Podcasts app, VLC Media Player, etc)
@@ -162,7 +162,7 @@ Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here]
 - [ ] Improve YT API Efficiency
     - [ ] Add user defined max videos to grab (by date)
     - [ ] Allow for multiple YT API keys 
-- [ ] Implement proper authenticaton (Username/Password)
+
 - [ ] Create IOS App (stretch goal)
 - [ ] Create Android App (stretch goal)
 
