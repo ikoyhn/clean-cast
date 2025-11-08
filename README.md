@@ -116,6 +116,10 @@ Below is a guide to get the application running
       ```
 2. Run the command to start the app up
 
+3. Copy the [properties.template.yml](https://github.com/ikoyhn/clean-cast/blob/main/properties.template.yml) defaults into your properties.yml file that gets created in `/config`. In here you'll find settings such as NTFY notification setup.
+
+4. Restart application after making any changes to `properties.yml`.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -139,6 +143,8 @@ Below is a guide to get the application running
 
 3. With this URL you can now add this to any of your favorite podcast apps that accept custom RSS feeds (Apple Podcasts app, VLC Media Player, etc)
 
+
+
 ### IOS Users
 Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here](https://github.com/ikoyhn/clean-cast/discussions/59) in the discussions tab to allow for generating your RSS feeds easier. View the comments to ensure you are using the most up-to-date version of the shortcut. _Please post any issues related to the shortcut in the discussion_.
 
@@ -160,9 +166,9 @@ Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here]
     - [ ] Managing saved podcasts
     - [ ] Allow user to set docker variables in UI
 - [ ] Improve YT API Efficiency
-    - [ ] Add user defined max videos to grab (by date)
+    - [x] Add user defined max videos to grab (by date)
     - [ ] Allow for multiple YT API keys 
-- [ ] Implement proper authenticaton (Username/Password)
+- [x] Implement proper authenticaton (Username/Password)
 - [ ] Create IOS App (stretch goal)
 - [ ] Create Android App (stretch goal)
 

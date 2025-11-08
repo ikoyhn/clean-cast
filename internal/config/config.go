@@ -40,10 +40,27 @@ type BasicAuth struct {
 	Password string `yaml:"password"`
 }
 
+type SetupDef struct {
+	GoogleApiKey           string `yaml:"google-api-key"`
+	AudioDir               string `yaml:"audio-dir"`
+	CookiesFile            string `yaml:"cookies-file"`
+	SponsorBlockCategories string `yaml:"sponsorblock-categories"`
+	Cron                   string `yaml:"episode-delete-cron"`
+	MinDuration            string `yaml:"min-duration"`
+	YtdlpExtractorArgs     string `yaml:"ytdlp-extractor-args"`
+}
+
+type YtdlpDef struct {
+	CookiesFile            string `yaml:"cookies-file"`
+	SponsorBlockCategories string `yaml:"sponsorblock-categories"`
+	YtdlpExtractorArgs     string `yaml:"ytdlp-extractor-args"`
+}
+
 type propertiesFileStruct struct {
 	Ntfy           NtfyDef           `yaml:"ntfy"`
 	Authentication AuthenticationDef `yaml:"authentication"`
-	Setup          ConfigDef         `yaml:"setup"`
+	Setup          SetupDef          `yaml:"setup"`
+	Ytdlp          YtdlpDef          `yaml:"ytdlp"`
 }
 
 var propertiesConfig propertiesFileStruct
@@ -116,13 +133,13 @@ func setupYtdlp() {
 	if s := os.Getenv("SPONSORBLOCK_CATEGORIES"); s != "" {
 		Config.SponsorBlockCategories = s
 		println("CONFIG | Sponsor block segments defined (from env).")
-	} else if propertiesConfig.Setup.SponsorBlockCategories != "" {
-		Config.SponsorBlockCategories = propertiesConfig.Setup.SponsorBlockCategories
+	} else if propertiesConfig.Ytdlp.SponsorBlockCategories != "" {
+		Config.SponsorBlockCategories = propertiesConfig.Ytdlp.SponsorBlockCategories
 		println("CONFIG | Sponsor block segments defined from properties.yml.")
 	}
 
-	if propertiesConfig.Setup.YtdlpExtractorArgs != "" {
-		Config.YtdlpExtractorArgs = propertiesConfig.Setup.YtdlpExtractorArgs
+	if propertiesConfig.Ytdlp.YtdlpExtractorArgs != "" {
+		Config.YtdlpExtractorArgs = propertiesConfig.Ytdlp.YtdlpExtractorArgs
 		println("CONFIG | Ytdlp extractor args set from properties.yml.")
 	}
 }
@@ -161,8 +178,8 @@ func setupCookiesFile() {
 	if cookiesFile := os.Getenv("COOKIES_FILE"); cookiesFile != "" {
 		Config.CookiesFile = path.Join(Config.ConfigDir, cookiesFile)
 		println("CONFIG | Cookies file set from env.")
-	} else if propertiesConfig.Setup.CookiesFile != "" {
-		Config.CookiesFile = path.Join(Config.ConfigDir, propertiesConfig.Setup.CookiesFile)
+	} else if propertiesConfig.Ytdlp.CookiesFile != "" {
+		Config.CookiesFile = path.Join(Config.ConfigDir, propertiesConfig.Ytdlp.CookiesFile)
 		println("CONFIG | Cookies file set from properties.yml.")
 	}
 }
@@ -178,42 +195,32 @@ func setupAudioDir() {
 func setupPropertiesFile() {
 	configPath := filepath.Join(Config.ConfigDir, "properties.yml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		emptyConfig := propertiesFileStruct{
-			Setup: ConfigDef{
-				ConfigDir:              "",
-				AudioDir:               "",
-				CookiesFile:            "",
-				GoogleApiKey:           "",
-				SponsorBlockCategories: "",
-				Cron:                   "",
-				MinDuration:            "",
-				YtdlpExtractorArgs:     "",
-			},
-			Ntfy: NtfyDef{
-				Server: "",
-				Topic:  "",
-			},
-			Authentication: AuthenticationDef{
-				Token: "",
-				BasicAuth: BasicAuth{
-					Username: "",
-					Password: "",
-				},
-			},
+		// Ensure config directory exists
+		if err := os.MkdirAll(Config.ConfigDir, os.ModePerm); err != nil {
+			log.Error("Failed to create config dir:", err)
+			return
 		}
-		data, err := yaml.Marshal(emptyConfig)
-		if err != nil {
-			log.Error("Failed to marshal empty config:", err)
-		}
-		if err := os.WriteFile(configPath, data, 0644); err != nil {
+		// Create an empty properties.yml so users can populate it from the template
+		if err := os.WriteFile(configPath, []byte{}, 0644); err != nil {
 			log.Error("Failed to create empty properties.yml:", err)
+			return
 		}
-		propertiesConfig = emptyConfig
+		// leave propertiesConfig as zero-value; user will populate the file
+		propertiesConfig = propertiesFileStruct{}
+		// Inform the user where to get the template
+		println("CONFIG | properties.yml created but empty. Please copy the template from:")
+		println("https://raw.githubusercontent.com/ikoyhn/clean-cast/main/properties.template.yml")
 		return
 	}
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		log.Error("Failed to read properties.yml:", err)
+		return
+	}
+	if len(data) == 0 {
+		propertiesConfig = propertiesFileStruct{}
+		println("CONFIG | properties.yml is empty. Please copy the template from:")
+		println("https://raw.githubusercontent.com/ikoyhn/clean-cast/main/properties.template.yml")
 		return
 	}
 	if err := yaml.Unmarshal(data, &propertiesConfig); err != nil {
