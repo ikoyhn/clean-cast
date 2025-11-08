@@ -33,8 +33,10 @@ authentication:
 # OPTIONAL: "cookies-file" - Set this if you want to use custom cookies for YT-DLP, store your cookies file in /config directory
 # OPTIONAL: "sponsorblock-categories" - Customize the categories that you would like to remove from your podcasts. String separated by `,` with possible values `sponsor,selfpromo,interaction,intro,outro,preview,music_offtopic,filler`. Default: `sponsor`
 # OPTIONAL: "episode-duration-minimum" - To filter out YT shorts for `/channel` podcasts there is a minimum duration a video has to be in order to grab it. The default is 5min, modify as needed. Example values: (30s, 5m, 1hr)
+# OPTIONAL: "extractor-args" - Custom YTDLP extractor args
 ###
 ytdlp:
     cookies-file: ""
     sponsorblock-categories: ""
-    episode-duration-minimum: ""
+    episode-duration-minimum: "10m"
+    extractor-args: ""

@@ -41,18 +41,15 @@ type BasicAuth struct {
 }
 
 type SetupDef struct {
-	GoogleApiKey           string `yaml:"google-api-key"`
-	AudioDir               string `yaml:"audio-dir"`
-	CookiesFile            string `yaml:"cookies-file"`
-	SponsorBlockCategories string `yaml:"sponsorblock-categories"`
-	Cron                   string `yaml:"episode-delete-cron"`
-	MinDuration            string `yaml:"min-duration"`
-	YtdlpExtractorArgs     string `yaml:"ytdlp-extractor-args"`
+	GoogleApiKey string `yaml:"google-api-key"`
+	AudioDir     string `yaml:"audio-dir"`
+	Cron         string `yaml:"cron"`
 }
 
 type YtdlpDef struct {
 	CookiesFile            string `yaml:"cookies-file"`
 	SponsorBlockCategories string `yaml:"sponsorblock-categories"`
+	MinDuration            string `yaml:"episode-duration-minimum"`
 	YtdlpExtractorArgs     string `yaml:"ytdlp-extractor-args"`
 }
 
@@ -121,8 +118,8 @@ func setupAdditionalProps() {
 	if m := os.Getenv("MIN_DURATION"); m != "" {
 		Config.MinDuration = m
 		println("CONFIG | MinDuration set (from env): " + Config.MinDuration)
-	} else if propertiesConfig.Setup.MinDuration != "" {
-		Config.MinDuration = propertiesConfig.Setup.MinDuration
+	} else if propertiesConfig.Ytdlp.MinDuration != "" {
+		Config.MinDuration = propertiesConfig.Ytdlp.MinDuration
 		println("CONFIG | MinDuration set from properties.yml: " + Config.MinDuration)
 	} else {
 		Config.MinDuration = "3m"
