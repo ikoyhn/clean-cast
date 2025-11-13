@@ -1,185 +1,394 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
-<a id="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+# CleanCast
 
-
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT][license-shield]][license-url]
-
-
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/ikoyhn/clean-cast">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
-<h3 align="center">CleanCast</h3>
+[![Contributors](https://img.shields.io/github/contributors/ikoyhn/clean-cast.svg?style=for-the-badge)](https://github.com/ikoyhn/clean-cast/graphs/contributors)
+[![Forks](https://img.shields.io/github/forks/ikoyhn/clean-cast.svg?style=for-the-badge)](https://github.com/ikoyhn/clean-cast/network/members)
+[![Stargazers](https://img.shields.io/github/stars/ikoyhn/clean-cast.svg?style=for-the-badge)](https://github.com/ikoyhn/clean-cast/stargazers)
+[![Issues](https://img.shields.io/github/issues/ikoyhn/clean-cast.svg?style=for-the-badge)](https://github.com/ikoyhn/clean-cast/issues)
+[![MIT License](https://img.shields.io/github/license/ikoyhn/clean-cast.svg?style=for-the-badge)](https://github.com/ikoyhn/clean-cast/blob/master/LICENSE.txt)
 
-  <p align="center">
-    Podcasting, purified
-    <br />
-    <a href="https://github.com/ikoyhn/clean-cast"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <!-- <a href="https://github.com/ikoyhn/clean-cast">View Demo</a>
-    &middot; -->
-    <a href="https://github.com/ikoyhn/clean-cast/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    &middot;
-    <a href="https://github.com/ikoyhn/clean-cast/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-  </p>
+**Podcasting, Purified**
+
+Transform YouTube videos into ad-free, sponsor-free podcast feeds with automatic content filtering and intelligent episode management.
+
+[Report Bug](https://github.com/ikoyhn/clean-cast/issues/new?labels=bug) • [Request Feature](https://github.com/ikoyhn/clean-cast/issues/new?labels=enhancement) • [Documentation](https://github.com/ikoyhn/clean-cast/tree/main/docs)
+
 </div>
 
+---
 
+## Table of Contents
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#running-the-app">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+- [About](#about)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start with Docker](#quick-start-with-docker)
+  - [Manual Installation](#manual-installation)
+- [Configuration](#configuration)
+  - [Environment Variables](#environment-variables)
+  - [Advanced Configuration](#advanced-configuration)
+- [Usage](#usage)
+  - [Creating RSS Feeds](#creating-rss-feeds)
+  - [API Endpoints](#api-endpoints)
+- [Development](#development)
+  - [Building from Source](#building-from-source)
+  - [Running Tests](#running-tests)
+  - [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
+---
 
+## About
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+CleanCast is a self-hosted Go application that transforms YouTube content into clean, ad-free podcast feeds. It automatically removes sponsored segments using SponsorBlock data, downloads audio on-demand, and serves it through standard RSS feeds compatible with any podcast application.
 
-This is a GO Docker application that will take any podcast that is on Youtube and will generate a RSS feed with the audio only and all sponsored sections auto removed. The actual podcasts episodes are downloaded on demand from youtube when the user requests the specific episode then it is served to the user seamlessly.
+### Key Highlights
 
+- **Zero Ads**: Automatically removes sponsored segments, intros, outros, and more
+- **On-Demand Downloads**: Episodes are downloaded only when requested, saving storage
+- **Standard RSS**: Works with Apple Podcasts, Pocket Casts, VLC, and any RSS-compatible app
+- **Smart Caching**: Intelligent episode management with automatic cleanup
+- **Multi-Format Support**: M4A, MP3, and Opus audio formats
+- **Analytics**: Track listening habits and popular episodes
+- **Backup & Restore**: Full database and audio file backups with S3 support
+- **Self-Hosted**: Complete control over your data and privacy
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
+## Features
 
+### Core Functionality
+- **YouTube to RSS Conversion**: Convert any YouTube playlist or channel into an RSS podcast feed
+- **Automatic Ad Removal**: Integrates with SponsorBlock to remove:
+  - Sponsor segments
+  - Self-promotion
+  - Interaction reminders
+  - Intros and outros
+  - Preview/recap segments
+  - Music offtopic segments
+  - Filler content
 
-### Built With
+### Content Management
+- **Smart Playlists**: Create custom playlists based on filters and criteria
+- **Content Filters**: Filter episodes by title, duration, keywords
+- **OPML Support**: Import/export podcast subscriptions
+- **Episode Search**: Full-text search across all episodes and podcasts
+- **Batch Operations**: Add/refresh/delete multiple podcasts at once
 
-* [![Golang][golang.com]][golang-url]
+### Advanced Features
+- **Analytics Dashboard**: Track plays, geographic distribution, popular episodes
+- **Transcript Support**: Access and search video transcripts
+- **Webhook Integration**: Discord, Slack, and generic webhook notifications
+- **Recommendations**: Get personalized podcast recommendations
+- **Backup System**: Automated backups with S3 cloud storage support
+- **Prometheus Metrics**: Built-in monitoring and observability
+- **Health Checks**: Kubernetes-ready health and readiness endpoints
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### API & Integration
+- **RESTful API**: Comprehensive REST API for all features
+- **Swagger Documentation**: Interactive API documentation at `/docs`
+- **Rate Limiting**: Configurable rate limits per endpoint
+- **Multiple Audio Formats**: Support for M4A, MP3, and Opus
+- **Custom Audio Quality**: Configurable bitrate settings
 
+---
 
+## Architecture
 
-<!-- GETTING STARTED -->
+CleanCast follows a clean architecture pattern with clear separation of concerns:
+
+```
+internal/
+├── api/           # HTTP handlers and request validation
+├── app/           # Application initialization and routing
+├── cache/         # In-memory caching layer
+├── config/        # Configuration management
+├── database/      # Database models and repositories
+├── middleware/    # HTTP middleware (auth, rate limiting, logging)
+├── models/        # Domain models and DTOs
+├── services/      # Business logic layer
+│   ├── analytics/     # Usage tracking and reporting
+│   ├── backup/        # Backup and restore operations
+│   ├── channel/       # YouTube channel processing
+│   ├── downloader/    # Audio download management
+│   ├── filter/        # Content filtering
+│   ├── playlist/      # Playlist management
+│   ├── recommendations/ # ML-based recommendations
+│   ├── rss/           # RSS feed generation
+│   ├── search/        # Full-text search
+│   ├── sponsorblock/  # Ad segment removal
+│   ├── transcript/    # Transcript fetching
+│   └── youtube/       # YouTube API integration
+└── logger/        # Structured logging
+```
+
+### Technology Stack
+
+- **Language**: Go 1.24
+- **Web Framework**: Echo v4
+- **Database**: SQLite with GORM
+- **YouTube Integration**: Google YouTube Data API v3
+- **Download Engine**: yt-dlp (via go-ytdlp)
+- **Logging**: Zerolog
+- **Metrics**: Prometheus
+- **Documentation**: Swagger/OpenAPI
+- **Containerization**: Docker with multi-platform support
+
+---
+
 ## Getting Started
-
-Below is a guide to get the application running
 
 ### Prerequisites
 
-1. Generate a Youtube api v3 key [here](https://developers.google.com/youtube/v3/getting-started)
-2. Install Docker
-3. Need some podcasts you like
+1. **YouTube API Key**: Get your free API key from [Google Cloud Console](https://developers.google.com/youtube/v3/getting-started)
+2. **Docker** (recommended) or **Go 1.24+** for manual installation
+3. Storage space for audio files (varies based on usage)
 
-### Running the App
+### Quick Start with Docker
 
-1. Build out your Docker run command (For more Docker variables and compose examples go [here](https://github.com/ikoyhn/clean-cast/blob/main/DOCKER-CONFIG.md))
-    - ```
-      docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/clean-cast
-      ```
-2. Run the command to start the app up
+The fastest way to get started:
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+```bash
+# Using Docker Run
+docker run -d \
+  --name clean-cast \
+  -p 8080:8080 \
+  -e GOOGLE_API_KEY=your_api_key_here \
+  -v /path/to/audio:/config \
+  ikoyhn/clean-cast:latest
 
+# Using Docker Compose (recommended)
+# 1. Copy the docker-compose.yml from this repo
+# 2. Create a .env file with your configuration
+cp .env.example .env
+# Edit .env with your GOOGLE_API_KEY
 
-<!-- USAGE EXAMPLES -->
+# 3. Start the service
+docker-compose up -d
+```
+
+The service will be available at `http://localhost:8080`
+
+### Manual Installation
+
+For development or custom deployments:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/ikoyhn/clean-cast.git
+cd clean-cast
+
+# 2. Set required environment variables
+export GOOGLE_API_KEY="your_api_key_here"
+export CONFIG_DIR="./config"
+export PORT="8080"
+
+# 3. Build and run
+go build -o clean-cast ./cmd/app
+./clean-cast
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+#### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `GOOGLE_API_KEY` | YouTube Data API v3 key | `AIzaSyC...` |
+
+#### Optional Core Variables
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `PORT` | HTTP server port | `8080` | `3000` |
+| `HOST` | Host to bind to | `0.0.0.0` | `localhost` |
+| `CONFIG_DIR` | Configuration directory | `/config` | `/data/config` |
+| `AUDIO_DIR` | Audio storage directory | `{CONFIG_DIR}/audio` | `/data/audio` |
+
+#### Content Configuration
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `SPONSORBLOCK_CATEGORIES` | Segments to remove | `sponsor` | `sponsor,intro,outro` |
+| `MIN_DURATION` | Minimum episode duration | `5m` | `10m` |
+| `COOKIES_FILE` | YT-DLP cookies filename | - | `cookies.txt` |
+| `AUDIO_FORMAT` | Output audio format | `m4a` | `mp3`, `opus` |
+| `AUDIO_QUALITY` | Audio bitrate | `192k` | `128k`, `256k` |
+
+#### Scheduling & Maintenance
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `CRON` | Cleanup cron schedule | `0 0 * * 0` | `0 2 * * *` |
+| `BACKUP_CRON` | Backup cron schedule | - | `0 3 * * *` |
+| `BACKUP_INCLUDE_AUDIO` | Include audio in backups | `false` | `true` |
+
+#### S3 Backup Configuration
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `BACKUP_S3_BUCKET` | S3 bucket name | `my-backups` |
+| `BACKUP_S3_REGION` | AWS region | `us-east-1` |
+| `BACKUP_S3_ACCESS_KEY` | AWS access key | `AKIA...` |
+| `BACKUP_S3_SECRET_KEY` | AWS secret key | `secret...` |
+
+### Advanced Configuration
+
+#### SponsorBlock Categories
+
+Available categories for `SPONSORBLOCK_CATEGORIES` (comma-separated):
+
+- `sponsor` - Paid promotions
+- `selfpromo` - Unpaid self-promotion
+- `interaction` - Interaction reminders (subscribe, like)
+- `intro` - Intermission/intro animation
+- `outro` - Endcards/credits
+- `preview` - Preview/recap of other videos
+- `music_offtopic` - Non-music portions in music videos
+- `poi_highlight` - Highlights of points of interest
+- `filler` - Filler tangent/off-topic
+
+#### Docker Volume Configuration
+
+For production, use named volumes or bind mounts:
+
+```yaml
+volumes:
+  audio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/clean-cast/audio
+```
+
+---
+
 ## Usage
 
- 1. Find your ID
-	-  **Playlist ID**: To find this navigate to the channel and either click the podcast tab or playlist tab and click on the playlist you want to add. Ex TigerBelly the url you should see after clicking it will be www.youtube.com/playlist?list=PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222` so the ID would be `PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222`
-			
-	 - **Channel ID**: If you want to create a podcast from all videos from a channel use this. You can get the channel ID using websites such as https://www.tunepocket.com/youtube-channel-id-finder/.
+### Creating RSS Feeds
 
-  
-2. Build your URL
-	-  **Playlist**: If you are building a podcast URL using a playlist use the `/rss`endpoint. * Following the TigerBelly example where this app is running on `http://localhost:8080` the url would be `http://localhost:8080/rss/PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222`
-			
-	 - **Channel**: If you are building a podcast URL using a channel ID use the `/channel` endpoint. An example would be `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA`
-       - **WARNING**: When using the channel endpoint you can easily max your Youtube API v3 quota. To reduce the chance use the URL param `date=MM-DD-YYYY`, this will give you an RSS feed of all videos published AFTER the date. Example url would look like `http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA?date=06-01-2025`
+#### From a Playlist
 
+1. Find your playlist ID from YouTube URL:
+   ```
+   https://www.youtube.com/playlist?list=PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222
+                                         └── This is your playlist ID
+   ```
 
+2. Build your RSS feed URL:
+   ```
+   http://localhost:8080/rss/PLbh0Jamvptwfp_qc439PLuyKJ-tWUt222
+   ```
 
+3. Add to your podcast app
 
-3. With this URL you can now add this to any of your favorite podcast apps that accept custom RSS feeds (Apple Podcasts app, VLC Media Player, etc)
+#### From a Channel
 
-### IOS Users
-Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here](https://github.com/ikoyhn/clean-cast/discussions/59) in the discussions tab to allow for generating your RSS feeds easier. View the comments to ensure you are using the most up-to-date version of the shortcut. _Please post any issues related to the shortcut in the discussion_.
+1. Get the channel ID using [this tool](https://www.tunepocket.com/youtube-channel-id-finder/)
 
+2. Build your RSS feed URL:
+   ```
+   http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA
+   ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+3. Optional: Limit by date to save API quota:
+   ```
+   http://localhost:8080/channel/UCoj1ZgGoSBoonNZqMsVUfAA?date=06-01-2025
+   ```
 
-<!-- Issues -->
-## Issues Connecting Your Favorite Podcast App?
-- If you are having issues using your favorite podcast client first check the [Discussions](https://github.com/ikoyhn/clean-cast/discussions) to see if there is a guide to set it up already created, if there isn't please create an new [Issue](https://github.com/ikoyhn/clean-cast/issues).
-- If you have a guide you would like to write to help out others go ahead and create a new discussion with the title template of `{app you are using} App - Setup Guide` 
+### API Endpoints
 
-<!-- ROADMAP -->
-## Roadmap
+CleanCast provides a comprehensive REST API. Key endpoints include:
 
-- [x] Playlists
-- [x] Channels
-- [ ] Add UI for easier URL generation
-    - [ ] Discovery Page of new podcasts based on Apple Podcast API
-    - [ ] Managing saved podcasts
-    - [ ] Allow user to set docker variables in UI
-- [ ] Improve YT API Efficiency
-    - [ ] Add user defined max videos to grab (by date)
-    - [ ] Allow for multiple YT API keys 
+#### RSS Feeds
+- `GET /rss/:playlistId` - Get RSS feed for a playlist
+- `GET /channel/:channelId` - Get RSS feed for a channel
+- `GET /media/:videoId` - Stream audio file
 
-- [ ] Create IOS App (stretch goal)
-- [ ] Create Android App (stretch goal)
+#### Content Management
+- `POST /api/opml/import` - Import OPML file
+- `GET /api/opml/export` - Export OPML file
+- `POST /api/filters` - Create content filter
+- `GET /api/filters` - List all filters
 
+#### Smart Playlists
+- `POST /api/playlist/smart` - Create smart playlist
+- `GET /api/playlist/smart` - List smart playlists
+- `GET /rss/smart/:id` - Get smart playlist RSS feed
 
-See the [open issues](https://github.com/ikoyhn/clean-cast/issues) for a full list of proposed features (and known issues).
+#### Analytics
+- `GET /api/analytics/popular` - Get popular episodes
+- `GET /api/analytics/summary` - Get analytics summary
+- `GET /api/analytics/dashboard` - Get dashboard data
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+#### Backup & Restore
+- `POST /api/backup/create` - Create backup
+- `GET /api/backup/list` - List backups
+- `POST /api/backup/restore/:id` - Restore backup
 
+#### Search
+- `GET /search/episodes` - Search episodes
+- `GET /search/podcasts` - Search podcasts
 
+#### System
+- `GET /health` - Health check
+- `GET /ready` - Readiness check
+- `GET /metrics` - Prometheus metrics
+- `GET /docs` - Swagger API documentation
 
-<!-- CONTRIBUTING -->
-## Contributing
+For complete API documentation, visit `/docs` when running the application.
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+---
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+## Development
+
+### Building from Source
+
+```bash
+# Clone repository
+git clone https://github.com/ikoyhn/clean-cast.git
+cd clean-cast
+
+# Install dependencies
+go mod download
+
+# Build
+go build -o clean-cast ./cmd/app
+
+# Run
+./clean-cast
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with coverage
+go test -cover ./...
+
+# Run specific package tests
+go test ./internal/services/rss/
+
+# Run benchmarks
+go test -bench=. ./internal/services/rss/
+```
+
+### Contributing
+
+Contributions are welcome and greatly appreciated!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -187,56 +396,159 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Please ensure your code follows Go conventions and includes appropriate tests.
 
-### Top contributors:
+---
 
-<a href="https://github.com/ikoyhn/clean-cast/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ikoyhn/clean-cast" alt="contrib.rocks image" />
-</a>
+## Troubleshooting
 
+### Common Issues
 
+#### YouTube API Quota Exceeded
 
-<!-- LICENSE -->
+**Problem**: Error messages about quota limits
+
+**Solution**:
+- Use the `?date=MM-DD-YYYY` parameter on channel feeds to limit the number of videos
+- Use the `?limit=N` parameter to limit the number of episodes
+- Consider using multiple API keys (rotate them)
+- Wait for the quota to reset (daily at midnight Pacific Time)
+
+#### Audio File Not Found
+
+**Problem**: 404 error when trying to play an episode
+
+**Solution**:
+- Check that the audio directory is writable
+- Verify sufficient disk space
+- Check Docker volume mounts are correct
+- Review logs for download errors
+
+#### Slow First Play
+
+**Problem**: Long wait time when playing an episode for the first time
+
+**Solution**:
+- This is expected - the episode is being downloaded on-demand
+- Subsequent plays will be instant (cached)
+- Consider pre-downloading popular episodes
+- Check your internet connection speed
+
+#### Podcast App Not Updating
+
+**Problem**: New episodes don't appear in your podcast app
+
+**Solution**:
+- Most apps cache RSS feeds for hours
+- Force refresh in your podcast app
+- Check if the YouTube channel has actually posted new videos
+- Verify cron job is running for metadata refresh
+
+#### Memory Usage
+
+**Problem**: High memory consumption
+
+**Solution**:
+- Adjust Docker memory limits in docker-compose.yml
+- Clear old audio files (adjust `CRON` schedule)
+- Reduce concurrent downloads
+- Check for memory leaks (file an issue)
+
+### Logging
+
+Enable debug logging for troubleshooting:
+
+```bash
+# Set log level
+export LOG_LEVEL=debug
+
+# View Docker logs
+docker-compose logs -f clean-cast
+
+# View logs with timestamps
+docker-compose logs -f --tail=100 clean-cast
+```
+
+### Getting Help
+
+- Check the [Discussions](https://github.com/ikoyhn/clean-cast/discussions) for setup guides
+- Search [existing issues](https://github.com/ikoyhn/clean-cast/issues)
+- Create a [new issue](https://github.com/ikoyhn/clean-cast/issues/new) with:
+  - Your configuration (redact sensitive data)
+  - Relevant logs
+  - Steps to reproduce
+  - Expected vs actual behavior
+
+---
+
+## FAQ
+
+**Q: Is this legal?**
+A: CleanCast uses official YouTube APIs and yt-dlp, which is widely used. You should only use it for content you have the right to access. Check your local laws and YouTube's Terms of Service.
+
+**Q: Does this work with private/unlisted videos?**
+A: Yes, if you provide cookies via `COOKIES_FILE` from an authenticated YouTube session.
+
+**Q: Can I use this with other video platforms?**
+A: Currently only YouTube is supported. Other platforms may be added in the future.
+
+**Q: How much storage do I need?**
+A: It depends on your usage. Episodes are downloaded on-demand and cleaned up automatically based on your `CRON` schedule. Budget approximately 50-100MB per hour of audio.
+
+**Q: Can I share my RSS feeds with others?**
+A: Yes, but be aware that everyone using your instance will consume your API quota and storage.
+
+**Q: Does this support video?**
+A: No, CleanCast is audio-only to save storage and bandwidth.
+
+---
+
+## Roadmap
+
+- [x] Playlist support
+- [x] Channel support
+- [x] SponsorBlock integration
+- [x] Analytics dashboard
+- [x] Smart playlists
+- [x] Content filters
+- [x] Backup/restore
+- [x] Webhook notifications
+- [ ] Web UI for management
+- [ ] Discovery page via Apple Podcast API
+- [ ] Multi-API key rotation
+- [ ] iOS mobile app
+- [ ] Android mobile app
+
+See [open issues](https://github.com/ikoyhn/clean-cast/issues) for a full list of proposed features and known issues.
+
+---
+
 ## License
 
-Distributed under the MIT. See `LICENSE.txt` for more information.
+Distributed under the MIT License. See `LICENSE` for more information.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
+## Acknowledgments
 
+- [lrstanley/go-ytdlp](https://github.com/lrstanley/go-ytdlp) - Go wrapper for yt-dlp
+- [SponsorBlock](https://sponsor.ajay.app/) - Community-driven ad segment database
+- [Google YouTube Data API](https://developers.google.com/youtube/v3) - YouTube metadata access
+- [Echo Framework](https://echo.labstack.com/) - High-performance Go web framework
+- [GORM](https://gorm.io/) - The fantastic ORM library for Golang
 
-<!-- CONTACT -->
+---
+
 ## Contact
 
 Jared Lynch - jaredlynch13@gmail.com
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Project Link: [https://github.com/ikoyhn/clean-cast](https://github.com/ikoyhn/clean-cast)
 
+---
 
+<div align="center">
 
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
+Made with Go | Maintained with ❤️
 
-* [Irstanley/go-ytdlp](https://github.com/lrstanley/go-ytdlp) for downloading Youtube videos (includes Sponsorblock for removing sponsored segments)
-* [google-api-go-client](https://github.com/googleapis/google-api-go-client) Used to get all information for Youtube Podcast
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/ikoyhn/clean-cast.svg?style=for-the-badge
-[contributors-url]: https://github.com/ikoyhn/clean-cast/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/ikoyhn/clean-cast.svg?style=for-the-badge
-[forks-url]: https://github.com/ikoyhn/clean-cast/network/members
-[stars-shield]: https://img.shields.io/github/stars/ikoyhn/clean-cast.svg?style=for-the-badge
-[stars-url]: https://github.com/ikoyhn/clean-cast/stargazers
-[issues-shield]: https://img.shields.io/github/issues/ikoyhn/clean-cast.svg?style=for-the-badge
-[issues-url]: https://github.com/ikoyhn/clean-cast/issues
-[license-shield]: https://img.shields.io/github/license/ikoyhn/clean-cast.svg?style=for-the-badge
-[license-url]: https://github.com/ikoyhn/clean-cast/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[golang.com]: https://img.shields.io/badge/Go-00ADD8?logo=Go&logoColor=white&style=for-the-badge
-[golang-url]: https://go.dev
+</div>

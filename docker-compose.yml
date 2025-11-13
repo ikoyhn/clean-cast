@@ -1,15 +1,118 @@
 version: '3.8'
+
 services:
   clean-cast:
-    build: .
-    #image:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      # Enable BuildKit for better caching
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+
+    # Uncomment to use pre-built image instead of building
+    # image: your-registry/clean-cast:latest
+
     container_name: clean-cast
+
     ports:
-      - "8080:8080"
+      - "${HOST_PORT:-8080}:8080"
+
+    # Environment variables - use .env file for production
     environment:
-      - GOOGLE_API_KEY=<API KEY>
-      - CRON=0 0 * * 0
-      - SPONSORBLOCK_CATEGORIES=sponsor
-      - COOKIES_FILE=<FILENAME>
+      # Required: YouTube API configuration
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+
+      # Server configuration
+      - PORT=${PORT:-8080}
+      - HOST=0.0.0.0
+      - CONFIG_DIR=/config
+      - AUDIO_DIR=/config/
+
+      # Content filtering and processing
+      - CRON=${CRON:-0 0 * * 0}
+      - SPONSORBLOCK_CATEGORIES=${SPONSORBLOCK_CATEGORIES:-sponsor}
+      - MIN_DURATION=${MIN_DURATION:-5m}
+      - COOKIES_FILE=${COOKIES_FILE:-}
+
+      # Audio format configuration
+      - AUDIO_FORMAT=${AUDIO_FORMAT:-m4a}
+      - AUDIO_QUALITY=${AUDIO_QUALITY:-192k}
+
+      # Backup configuration (optional)
+      - BACKUP_CRON=${BACKUP_CRON:-}
+      - BACKUP_INCLUDE_AUDIO=${BACKUP_INCLUDE_AUDIO:-false}
+
+      # S3 backup configuration (optional, all required if using S3)
+      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:-}
+      - BACKUP_S3_REGION=${BACKUP_S3_REGION:-}
+      - BACKUP_S3_ACCESS_KEY=${BACKUP_S3_ACCESS_KEY:-}
+      - BACKUP_S3_SECRET_KEY=${BACKUP_S3_SECRET_KEY:-}
+
+    # Volume management
     volumes:
-      - /DL PATH>:/config
+      # Persistent audio storage
+      - audio_data:/config
+      # Optional: bind mount for cookies file
+      # - ${COOKIES_PATH:-./cookies.txt}:/config/cookies.txt:ro
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=clean-cast"
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Read-only root filesystem (uncomment if app supports it)
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+
+    # Network mode
+    networks:
+      - clean-cast-network
+
+# Named volumes for persistent data
+volumes:
+  audio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${AUDIO_DIR_PATH:-./audio}
+
+# Custom network
+networks:
+  clean-cast-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

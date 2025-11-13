@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+LICENSE
+DOCKER-CONFIG.md
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Test files
+*_test.go
+testdata
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+tmp/
+cmd/tmp/
+cmd/app/__debug_*
+cmd/app/tmp/
+
+# Database files
+*.db
+
+# Audio files
+cmd/app/audio/*
+
+# Environment files
+*.env
+.env.local
+.env.*.local
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (not needed in the image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Images folder
+images/

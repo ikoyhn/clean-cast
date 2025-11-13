@@ -1,0 +1,99 @@
+# golangci-lint configuration
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck       # Check for unchecked errors
+    - gosimple       # Simplify code
+    - govet          # Vet examines Go source code
+    - ineffassign    # Detect ineffectual assignments
+    - staticcheck    # Advanced Go linter
+    - unused         # Check for unused code
+    - misspell       # Check for misspelled words
+    - gofmt          # Check code formatting
+    - goimports      # Check import formatting
+    - gocritic       # Comprehensive Go linter
+    - gosec          # Security-focused linter
+    - revive         # Fast linter
+    - bodyclose      # Check HTTP response body close
+    - dupl           # Check for duplicate code
+    - exhaustive     # Check exhaustiveness of enum switch statements
+    - gocyclo        # Check cyclomatic complexity
+    - goprintffuncname # Check printf-like function names
+    - nolintlint     # Check nolint directives
+    - rowserrcheck   # Check sql.Rows.Err usage
+    - sqlclosecheck  # Check sql.Rows and sql.Stmt close
+    - unconvert      # Remove unnecessary type conversions
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: false
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+
+  gocyclo:
+    min-complexity: 15
+
+  dupl:
+    threshold: 100
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+
+  gosec:
+    excludes:
+      - G404 # Use of weak random number generator
+      - G307 # Deferring unsafe method
+
+  staticcheck:
+    checks: ["all"]
+
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+
+    # Exclude known issues
+    - text: "G404:"  # Weak random number generator
+      linters:
+        - gosec
+
+    # Exclude legacy code patterns
+    - text: "should have comment"
+      linters:
+        - revive
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true

@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  clean-cast:
+    build: .
+    container_name: clean-cast
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/config
+    environment:
+      # Required
+      - GOOGLE_API_KEY=your_google_api_key_here
+
+      # Server Configuration
+      - HOST=0.0.0.0
+      - PORT=8080
+
+      # Authentication (optional)
+      - TOKEN=your_secret_token_here
+
+      # Audio Format Configuration
+      - AUDIO_FORMAT=m4a              # Options: m4a, mp3, opus (default: m4a)
+      - AUDIO_QUALITY=192k            # Options: 128k, 192k, 320k (default: 192k)
+
+      # SponsorBlock Configuration
+      - SPONSORBLOCK_CATEGORIES=sponsor,intro,outro,selfpromo
+
+      # Podcast Cleanup Cron
+      - CRON=0 0 * * *                # Daily at midnight
+
+      # Episode Duration Filter
+      - MIN_DURATION=2m               # Minimum episode duration (default: 2m)
+
+      # Backup Configuration
+      - BACKUP_CRON=0 2 * * *         # Daily at 2 AM (optional)
+      - BACKUP_INCLUDE_AUDIO=false    # Include audio files in backups (default: false)
+
+      # S3 Backup Configuration (optional)
+      - BACKUP_S3_BUCKET=my-backups
+      - BACKUP_S3_REGION=us-east-1
+      - BACKUP_S3_ACCESS_KEY=your_aws_access_key
+      - BACKUP_S3_SECRET_KEY=your_aws_secret_key
+
+      # Cookies File (optional, for age-restricted content)
+      - COOKIES_FILE=cookies.txt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  config:
+    driver: local

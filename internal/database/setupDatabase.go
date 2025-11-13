@@ -4,6 +4,7 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -37,16 +38,50 @@ func SetupDatabase() {
 		panic(err)
 	}
 
-	err = db.AutoMigrate(&models.EpisodePlaybackHistory{})
+	// Configure connection pooling
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(25)
+		sqlDB.SetMaxIdleConns(5)
+		sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	}
+
+	// Run database migrations
+	err = RunMigrations(db)
 	if err != nil {
 		panic(err)
 	}
-	err = db.AutoMigrate(&models.PodcastEpisode{})
-	if err != nil {
-		panic(err)
+}
+
+// GetDB returns the database instance
+func GetDB() *gorm.DB {
+	return db
+}
+
+// CheckHealth performs a health check on the database
+func CheckHealth() error {
+	if db == nil {
+		return gorm.ErrInvalidDB
 	}
-	err = db.AutoMigrate(&models.Podcast{})
+
+	sqlDB, err := db.DB()
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return sqlDB.Ping()
+}
+
+// Close closes the database connection
+func Close() error {
+	if db == nil {
+		return nil
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	return sqlDB.Close()
 }

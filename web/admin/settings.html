@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Clean Cast Admin</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="bg-slate-900 text-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar flex-shrink-0 hidden md:block">
+      <div class="p-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i class="fas fa-podcast text-blue-500"></i>
+          Clean Cast
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Admin Panel</p>
+      </div>
+
+      <nav class="mt-6">
+        <a href="/admin" class="sidebar-item">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/podcasts" class="sidebar-item">
+          <i class="fas fa-podcast"></i>
+          <span>Podcasts</span>
+        </a>
+        <a href="/admin/episodes" class="sidebar-item">
+          <i class="fas fa-list"></i>
+          <span>Episodes</span>
+        </a>
+        <a href="/admin/analytics" class="sidebar-item">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="/admin/settings" class="sidebar-item active">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Header -->
+      <header class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Settings</h2>
+            <p class="text-sm text-gray-400 mt-1">Configure your Clean Cast instance</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Settings Tabs -->
+        <div class="card mb-6">
+          <div class="flex gap-4 border-b border-slate-700 pb-4">
+            <button onclick="showTab('webhooks')" id="tabWebhooks"
+                    class="px-4 py-2 rounded-lg font-medium transition tab-button active">
+              <i class="fas fa-webhook mr-2"></i>Webhooks
+            </button>
+            <button onclick="showTab('filters')" id="tabFilters"
+                    class="px-4 py-2 rounded-lg font-medium transition tab-button">
+              <i class="fas fa-filter mr-2"></i>Content Filters
+            </button>
+            <button onclick="showTab('preferences')" id="tabPreferences"
+                    class="px-4 py-2 rounded-lg font-medium transition tab-button">
+              <i class="fas fa-sliders-h mr-2"></i>Preferences
+            </button>
+            <button onclick="showTab('backup')" id="tabBackup"
+                    class="px-4 py-2 rounded-lg font-medium transition tab-button">
+              <i class="fas fa-database mr-2"></i>Backup & Restore
+            </button>
+          </div>
+        </div>
+
+        <!-- Webhooks Tab -->
+        <div id="contentWebhooks" class="tab-content">
+          <div class="card mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Webhook Configurations</h3>
+              <button onclick="showAddWebhookModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Webhook
+              </button>
+            </div>
+
+            <div id="webhooksList" class="space-y-4">
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Tab -->
+        <div id="contentFilters" class="tab-content hidden">
+          <div class="card mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Content Filters</h3>
+              <button onclick="showAddFilterModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Filter
+              </button>
+            </div>
+
+            <div id="filtersList" class="space-y-4">
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferences Tab -->
+        <div id="contentPreferences" class="tab-content hidden">
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4">User Preferences</h3>
+            <div id="preferencesForm" class="space-y-4">
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backup Tab -->
+        <div id="contentBackup" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Create Backup -->
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">
+                <i class="fas fa-download text-blue-500"></i>
+                Create Backup
+              </h3>
+              <p class="text-gray-400 mb-4">
+                Create a backup of your database and optionally include audio files.
+              </p>
+              <div class="space-y-3">
+                <button onclick="createBackup(false)" class="btn btn-primary w-full">
+                  <i class="fas fa-file-archive"></i>
+                  Backup Database Only
+                </button>
+                <button onclick="createBackup(true)" class="btn btn-secondary w-full">
+                  <i class="fas fa-download"></i>
+                  Backup with Audio Files
+                </button>
+              </div>
+            </div>
+
+            <!-- Restore Backup -->
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">
+                <i class="fas fa-upload text-green-500"></i>
+                Restore Backup
+              </h3>
+              <p class="text-gray-400 mb-4">
+                Restore from a previous backup. This will overwrite current data.
+              </p>
+              <button onclick="showRestoreModal()" class="btn btn-warning w-full">
+                <i class="fas fa-undo"></i>
+                Restore from Backup
+              </button>
+            </div>
+          </div>
+
+          <!-- Available Backups -->
+          <div class="card mt-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Available Backups</h3>
+              <button onclick="loadBackups()" class="btn btn-secondary">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div id="backupsList" class="space-y-3">
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script>
+    let currentTab = 'webhooks';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      showTab('webhooks');
+    });
+
+    // Show tab
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+      });
+
+      // Deactivate all buttons
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-600', 'text-white');
+        btn.classList.add('text-gray-400');
+      });
+
+      // Show selected tab
+      document.getElementById(`content${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.remove('hidden');
+
+      // Activate button
+      const btn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+      btn.classList.add('active', 'bg-blue-600', 'text-white');
+      btn.classList.remove('text-gray-400');
+
+      currentTab = tabName;
+
+      // Load data for tab
+      switch (tabName) {
+        case 'webhooks':
+          loadWebhooks();
+          break;
+        case 'filters':
+          loadFilters();
+          break;
+        case 'preferences':
+          loadPreferences();
+          break;
+        case 'backup':
+          loadBackups();
+          break;
+      }
+    }
+
+    // ========== WEBHOOKS ==========
+
+    async function loadWebhooks() {
+      const container = document.getElementById('webhooksList');
+      try {
+        const webhooks = await api.getWebhooks();
+
+        if (webhooks.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-4">No webhooks configured</p>';
+          return;
+        }
+
+        let html = '';
+        webhooks.forEach(webhook => {
+          html += `
+            <div class="p-4 bg-slate-800 rounded-lg">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h4 class="font-semibold text-white">${sanitizeHTML(webhook.name || 'Unnamed Webhook')}</h4>
+                    ${webhook.enabled ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>'}
+                    <span class="badge badge-info">${webhook.type}</span>
+                  </div>
+                  <p class="text-sm text-gray-400 mb-2">${sanitizeHTML(webhook.url)}</p>
+                  <p class="text-sm text-gray-500">Events: ${webhook.events}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="editWebhook(${webhook.id})" class="text-blue-400 hover:text-blue-300">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteWebhook(${webhook.id})" class="text-red-400 hover:text-red-300">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load webhooks:', error);
+        container.innerHTML = '<p class="text-red-400 text-center">Failed to load webhooks</p>';
+      }
+    }
+
+    function showAddWebhookModal() {
+      const modal = showModal('Add Webhook', `
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" id="webhookName" class="form-input" placeholder="My Discord Webhook">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Webhook URL</label>
+            <input type="url" id="webhookUrl" class="form-input" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select id="webhookType" class="form-select">
+              <option value="discord">Discord</option>
+              <option value="slack">Slack</option>
+              <option value="generic">Generic</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Events (comma-separated)</label>
+            <input type="text" id="webhookEvents" class="form-input"
+                   placeholder="episode.new,episode.deleted"
+                   value="episode.new">
+          </div>
+          <div class="form-group">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="webhookEnabled" checked>
+              <span>Enabled</span>
+            </label>
+          </div>
+        </div>
+      `, [
+        { id: 'saveWebhook', text: 'Save', type: 'primary' },
+        { id: 'cancelWebhook', text: 'Cancel', type: 'secondary' }
+      ]);
+
+      document.getElementById('saveWebhook').addEventListener('click', async () => {
+        const webhook = {
+          name: document.getElementById('webhookName').value,
+          url: document.getElementById('webhookUrl').value,
+          type: document.getElementById('webhookType').value,
+          events: document.getElementById('webhookEvents').value,
+          enabled: document.getElementById('webhookEnabled').checked
+        };
+
+        if (!webhook.name || !webhook.url || !webhook.events) {
+          showToast('Please fill all required fields', 'warning');
+          return;
+        }
+
+        try {
+          await api.createWebhook(webhook);
+          showToast('Webhook created successfully', 'success');
+          closeModal();
+          loadWebhooks();
+        } catch (error) {
+          showToast('Failed to create webhook: ' + parseError(error), 'error');
+        }
+      });
+
+      document.getElementById('cancelWebhook').addEventListener('click', closeModal);
+    }
+
+    async function deleteWebhook(id) {
+      confirmDialog('Delete this webhook?', async () => {
+        try {
+          await api.deleteWebhook(id);
+          showToast('Webhook deleted', 'success');
+          loadWebhooks();
+        } catch (error) {
+          showToast('Failed to delete webhook: ' + parseError(error), 'error');
+        }
+      });
+    }
+
+    // ========== FILTERS ==========
+
+    async function loadFilters() {
+      const container = document.getElementById('filtersList');
+      try {
+        const filters = await api.getFilters();
+
+        if (!filters || filters.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-4">No filters configured</p>';
+          return;
+        }
+
+        let html = '';
+        filters.forEach(filter => {
+          html += `
+            <div class="p-4 bg-slate-800 rounded-lg">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h4 class="font-semibold text-white">${sanitizeHTML(filter.name || 'Unnamed Filter')}</h4>
+                    ${filter.enabled ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>'}
+                    <span class="badge badge-primary">${filter.filter_type || 'content'}</span>
+                  </div>
+                  <p class="text-sm text-gray-400 mb-2">Pattern: ${sanitizeHTML(filter.pattern)}</p>
+                  <p class="text-sm text-gray-500">Action: ${filter.action || 'exclude'}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="toggleFilter(${filter.id})" class="text-purple-400 hover:text-purple-300">
+                    <i class="fas fa-toggle-${filter.enabled ? 'on' : 'off'}"></i>
+                  </button>
+                  <button onclick="deleteFilter(${filter.id})" class="text-red-400 hover:text-red-300">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load filters:', error);
+        container.innerHTML = '<p class="text-red-400 text-center">Failed to load filters</p>';
+      }
+    }
+
+    function showAddFilterModal() {
+      const modal = showModal('Add Content Filter', `
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">Filter Name</label>
+            <input type="text" id="filterName" class="form-input" placeholder="Block Shorts">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter Type</label>
+            <select id="filterType" class="form-select">
+              <option value="title">Title</option>
+              <option value="description">Description</option>
+              <option value="duration">Duration</option>
+              <option value="regex">Regex</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pattern</label>
+            <input type="text" id="filterPattern" class="form-input"
+                   placeholder="e.g., #shorts or regex pattern">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Action</label>
+            <select id="filterAction" class="form-select">
+              <option value="exclude">Exclude</option>
+              <option value="include">Include</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="filterEnabled" checked>
+              <span>Enabled</span>
+            </label>
+          </div>
+        </div>
+      `, [
+        { id: 'saveFilter', text: 'Save', type: 'primary' },
+        { id: 'cancelFilter', text: 'Cancel', type: 'secondary' }
+      ]);
+
+      document.getElementById('saveFilter').addEventListener('click', async () => {
+        const filter = {
+          name: document.getElementById('filterName').value,
+          filter_type: document.getElementById('filterType').value,
+          pattern: document.getElementById('filterPattern').value,
+          action: document.getElementById('filterAction').value,
+          enabled: document.getElementById('filterEnabled').checked
+        };
+
+        if (!filter.name || !filter.pattern) {
+          showToast('Please fill all required fields', 'warning');
+          return;
+        }
+
+        try {
+          await api.createFilter(filter);
+          showToast('Filter created successfully', 'success');
+          closeModal();
+          loadFilters();
+        } catch (error) {
+          showToast('Failed to create filter: ' + parseError(error), 'error');
+        }
+      });
+
+      document.getElementById('cancelFilter').addEventListener('click', closeModal);
+    }
+
+    async function toggleFilter(id) {
+      try {
+        await api.toggleFilter(id);
+        showToast('Filter toggled', 'success');
+        loadFilters();
+      } catch (error) {
+        showToast('Failed to toggle filter: ' + parseError(error), 'error');
+      }
+    }
+
+    async function deleteFilter(id) {
+      confirmDialog('Delete this filter?', async () => {
+        try {
+          await api.deleteFilter(id);
+          showToast('Filter deleted', 'success');
+          loadFilters();
+        } catch (error) {
+          showToast('Failed to delete filter: ' + parseError(error), 'error');
+        }
+      });
+    }
+
+    // ========== PREFERENCES ==========
+
+    async function loadPreferences() {
+      const container = document.getElementById('preferencesForm');
+      try {
+        const prefs = await api.getUserPreferences();
+
+        container.innerHTML = `
+          <div class="form-group">
+            <label class="form-label">Default Audio Format</label>
+            <select id="prefAudioFormat" class="form-select">
+              <option value="m4a" ${prefs.audio_format === 'm4a' ? 'selected' : ''}>M4A</option>
+              <option value="mp3" ${prefs.audio_format === 'mp3' ? 'selected' : ''}>MP3</option>
+              <option value="opus" ${prefs.audio_format === 'opus' ? 'selected' : ''}>Opus</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Default Audio Quality</label>
+            <select id="prefAudioQuality" class="form-select">
+              <option value="high" ${prefs.audio_quality === 'high' ? 'selected' : ''}>High</option>
+              <option value="medium" ${prefs.audio_quality === 'medium' ? 'selected' : ''}>Medium</option>
+              <option value="low" ${prefs.audio_quality === 'low' ? 'selected' : ''}>Low</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="prefSponsorBlock" ${prefs.enable_sponsorblock ? 'checked' : ''}>
+              <span>Enable SponsorBlock</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="prefAutoRefresh" ${prefs.auto_refresh ? 'checked' : ''}>
+              <span>Auto-refresh podcasts</span>
+            </label>
+          </div>
+
+          <button onclick="savePreferences()" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            Save Preferences
+          </button>
+        `;
+      } catch (error) {
+        console.error('Failed to load preferences:', error);
+        container.innerHTML = '<p class="text-red-400">Failed to load preferences</p>';
+      }
+    }
+
+    async function savePreferences() {
+      const prefs = {
+        audio_format: document.getElementById('prefAudioFormat').value,
+        audio_quality: document.getElementById('prefAudioQuality').value,
+        enable_sponsorblock: document.getElementById('prefSponsorBlock').checked,
+        auto_refresh: document.getElementById('prefAutoRefresh').checked
+      };
+
+      try {
+        await api.updateUserPreferences(prefs);
+        showToast('Preferences saved successfully', 'success');
+      } catch (error) {
+        showToast('Failed to save preferences: ' + parseError(error), 'error');
+      }
+    }
+
+    // ========== BACKUP ==========
+
+    async function loadBackups() {
+      const container = document.getElementById('backupsList');
+      try {
+        const backups = await api.listBackups();
+
+        if (!backups || backups.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-4">No backups available</p>';
+          return;
+        }
+
+        let html = '';
+        backups.forEach(backup => {
+          html += `
+            <div class="p-4 bg-slate-800 rounded-lg flex justify-between items-center">
+              <div>
+                <p class="font-semibold text-white">${sanitizeHTML(backup.filename)}</p>
+                <p class="text-sm text-gray-400">
+                  ${formatBytes(backup.size)} • ${formatDate(backup.created_at)}
+                </p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="downloadBackup('${backup.filename}')" class="btn btn-secondary">
+                  <i class="fas fa-download"></i>
+                  Download
+                </button>
+                <button onclick="restoreBackup('${backup.filename}')" class="btn btn-warning">
+                  <i class="fas fa-undo"></i>
+                  Restore
+                </button>
+                <button onclick="deleteBackupFile('${backup.filename}')" class="btn btn-danger">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load backups:', error);
+        container.innerHTML = '<p class="text-red-400 text-center">Failed to load backups</p>';
+      }
+    }
+
+    async function createBackup(includeAudio) {
+      const msg = includeAudio ? 'Creating backup with audio files...' : 'Creating backup...';
+      showToast(msg, 'info');
+
+      try {
+        await api.createBackup(includeAudio);
+        showToast('Backup created successfully!', 'success');
+        loadBackups();
+      } catch (error) {
+        showToast('Failed to create backup: ' + parseError(error), 'error');
+      }
+    }
+
+    function downloadBackup(filename) {
+      api.downloadBackup(filename);
+      showToast('Download started', 'success');
+    }
+
+    async function restoreBackup(filename) {
+      confirmDialog(
+        `Restore from backup "${filename}"? This will overwrite all current data!`,
+        async () => {
+          try {
+            showToast('Restoring backup...', 'info');
+            await api.restoreBackup(filename);
+            showToast('Backup restored successfully! Please refresh the page.', 'success');
+          } catch (error) {
+            showToast('Failed to restore backup: ' + parseError(error), 'error');
+          }
+        }
+      );
+    }
+
+    async function deleteBackupFile(filename) {
+      confirmDialog(`Delete backup "${filename}"?`, async () => {
+        try {
+          await api.deleteBackup(filename);
+          showToast('Backup deleted', 'success');
+          loadBackups();
+        } catch (error) {
+          showToast('Failed to delete backup: ' + parseError(error), 'error');
+        }
+      });
+    }
+
+    function showRestoreModal() {
+      showToast('Please select a backup from the list below to restore', 'info');
+    }
+  </script>
+
+  <style>
+    .tab-button {
+      transition: all 0.2s;
+    }
+    .tab-button:hover {
+      background-color: #334155;
+    }
+    .tab-button.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+  </style>
+</body>
+</html>

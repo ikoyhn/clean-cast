@@ -3,14 +3,15 @@ package youtube
 import (
 	"context"
 	"ikoyhn/podcast-sponsorblock/internal/config"
+	"ikoyhn/podcast-sponsorblock/internal/constants"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"time"
 
-	log "github.com/labstack/gommon/log"
 	"google.golang.org/api/option"
 	ytApi "google.golang.org/api/youtube/v3"
+	"ikoyhn/podcast-sponsorblock/internal/logger"
 )
 
 func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist bool) models.Podcast {
@@ -19,15 +20,20 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 	dbPodcast := database.GetPodcast(channelIdentifier)
 
 	if dbPodcast == nil {
+		// Create context with timeout for API calls
+		ctx, cancel := context.WithTimeout(context.Background(), constants.RequestTimeout*time.Second)
+		defer cancel()
+
 		if isPlaylist {
 			playlistCall := service.Playlists.List([]string{"snippet", "status", "contentDetails"}).
-				Id(channelIdentifier)
+				Id(channelIdentifier).
+				Context(ctx)
 			playlistResponse, err := playlistCall.Do()
 			if err != nil {
-				log.Errorf("Error retrieving playlist details: %v", err)
+				logger.Logger.Error().Msgf("Error retrieving playlist details: %v", err)
 			}
 			if len(playlistResponse.Items) == 0 {
-				log.Errorf("Playlist not found")
+				logger.Logger.Error().Msgf("Playlist not found")
 			}
 			playlist := playlistResponse.Items[0]
 			channelId = playlist.Snippet.ChannelId
@@ -36,26 +42,19 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 		}
 
 		channelCall = service.Channels.List([]string{"snippet", "statistics", "contentDetails"}).
-			Id(channelId)
+			Id(channelId).
+			Context(ctx)
 		channelResponse, err := channelCall.Do()
 		if err != nil {
-			log.Errorf("Error retrieving channel details: %v", err)
+			logger.Logger.Error().Msgf("Error retrieving channel details: %v", err)
 		}
 		if len(channelResponse.Items) == 0 {
-			log.Errorf("Channel not found")
+			logger.Logger.Error().Msgf("Channel not found")
 		}
 		channel := channelResponse.Items[0]
 
-		imageUrl := ""
-		if channel.Snippet.Thumbnails.Maxres != nil {
-			imageUrl = channel.Snippet.Thumbnails.Maxres.Url
-		} else if channel.Snippet.Thumbnails.Standard != nil {
-			imageUrl = channel.Snippet.Thumbnails.Standard.Url
-		} else if channel.Snippet.Thumbnails.High != nil {
-			imageUrl = channel.Snippet.Thumbnails.High.Url
-		} else if channel.Snippet.Thumbnails.Default != nil {
-			imageUrl = channel.Snippet.Thumbnails.Default.Url
-		}
+		// Use common utility for thumbnail selection
+		imageUrl := common.SelectBestThumbnail(channel.Snippet.Thumbnails)
 
 		dbPodcast = &models.Podcast{
 			Id:              channelIdentifier,
@@ -75,60 +74,71 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 	return *dbPodcast
 }
 
-func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
+func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) ([]models.PodcastEpisode, error) {
+	// Create context with timeout for API calls
+	ctx, cancel := context.WithTimeout(context.Background(), constants.RequestTimeout*time.Second)
+	defer cancel()
+
 	videoCall := service.Videos.List([]string{"id,snippet,contentDetails"}).
 		Id(videoIdsNotSaved...).
-		MaxResults(int64(len(videoIdsNotSaved)))
+		MaxResults(int64(len(videoIdsNotSaved))).
+		Context(ctx)
 
 	videoResponse, err := videoCall.Do()
 	if err != nil {
-		log.Error(err)
-		return nil
+		logger.Logger.Error().Err(err).Msg("")
+		return nil, err
 	}
 
 	dur, err := time.ParseDuration(config.Config.MinDuration)
 	if err != nil {
-		panic("Invalid MIN_DURATION format. Use formats like '5m', '1h', '400s'.")
+		logger.Logger.Error().Msgf("Invalid MIN_DURATION format '%s'. Use formats like '5m', '1h', '400s'. Error: %v", config.Config.MinDuration, err)
+		return nil, err
 	}
 
 	for _, item := range videoResponse.Items {
 		if item.Id != "" {
 			duration, err := common.ParseDuration(item.ContentDetails.Duration)
 			if err != nil {
-				log.Error(err)
+				logger.Logger.Error().Err(err).Msg("")
 				continue
 			}
 
 			if duration.Seconds() > dur.Seconds() {
 				if database.IsEpisodeSaved(item) {
-					return missingVideos
+					return missingVideos, nil
 				}
 				missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item, duration))
 			}
 		}
 	}
-	return missingVideos
+	return missingVideos, nil
 }
 
 func FindChannel(channelID string, service *ytApi.Service) bool {
 	exists, err := database.PodcastExists(channelID)
 	if err != nil {
-		log.Error(err)
+		logger.Logger.Error().Err(err).Msg("")
 		return true
 	}
 
 	if !exists {
-		channelCall := service.Channels.List([]string{"snippet", "statistics", "contentDetails"})
-		channelCall = channelCall.Id(channelID)
+		// Create context with timeout for API calls
+		ctx, cancel := context.WithTimeout(context.Background(), constants.RequestTimeout*time.Second)
+		defer cancel()
+
+		channelCall := service.Channels.List([]string{"snippet", "statistics", "contentDetails"}).
+			Id(channelID).
+			Context(ctx)
 
 		channelResponse, err := channelCall.Do()
 		if err != nil {
-			log.Error(err)
+			logger.Logger.Error().Err(err).Msg("")
 			return false
 		}
 
 		if len(channelResponse.Items) == 0 {
-			log.Error("channel not found")
+			logger.Logger.Error("channel not found")
 			return false
 		}
 	}
@@ -137,13 +147,16 @@ func FindChannel(channelID string, service *ytApi.Service) bool {
 
 func SetupYoutubeService() *ytApi.Service {
 	apiKey := config.Config.GoogleApiKey
-	ctx := context.Background()
+	// Use context with timeout for YouTube API setup
+	ctx, cancel := context.WithTimeout(context.Background(), constants.RequestTimeout*time.Second)
+	defer cancel()
+
 	service, err := ytApi.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		log.Errorf("Error creating new YouTube client: %v", err)
+		logger.Logger.Error().Msgf("Error creating new YouTube client: %v", err)
 	}
 	if service == nil {
-		log.Errorf("Failed to create YouTube service: %v", err)
+		logger.Logger.Error().Msgf("Failed to create YouTube service: %v", err)
 	}
 	return service
 }

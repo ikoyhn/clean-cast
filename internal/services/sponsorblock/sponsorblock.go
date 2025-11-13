@@ -3,17 +3,29 @@ package sponsorblock
 import (
 	"encoding/json"
 	"ikoyhn/podcast-sponsorblock/internal/config"
+	"ikoyhn/podcast-sponsorblock/internal/constants"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	log "github.com/labstack/gommon/log"
+	"ikoyhn/podcast-sponsorblock/internal/logger"
 )
 
 const SPONSORBLOCK_API_URL = "https://sponsor.ajay.app/api/skipSegments?videoID="
+
+// Package-level HTTP client with connection pooling and timeout
+var httpClient = &http.Client{
+	Timeout: constants.RequestTimeout * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
 
 func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 	episodeHistory := database.GetEpisodePlaybackHistory(youtubeVideoId)
@@ -23,9 +35,9 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 		return true, updatedSkippedTime
 	}
 
-	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
+	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > constants.SponsorBlockThreshold {
 		os.Remove(config.Config.AudioDir + youtubeVideoId + ".m4a")
-		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
+		logger.Logger.Debug().Msg("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}
 
@@ -33,7 +45,7 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 }
 
 func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
-	log.Debug("[SponsorBlock] Looking up podcast in SponsorBlock API...")
+	logger.Logger.Debug().Msg("[SponsorBlock] Looking up podcast in SponsorBlock API...")
 	endURL := SPONSORBLOCK_API_URL + youtubeVideoId
 
 	if categories := getCategories(); categories != nil {
@@ -42,26 +54,26 @@ func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
 		}
 	}
 
-	resp, err := http.Get(endURL)
+	resp, err := httpClient.Get(endURL)
 	if err != nil {
-		log.Error(err)
+		logger.Logger.Error().Err(err).Msg("")
 		return 0
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		log.Warnf("Video not found on SponsorBlock API: %s", youtubeVideoId)
+		logger.Logger.Warn().Msgf("Video not found on SponsorBlock API: %s", youtubeVideoId)
 		return 0
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr != nil {
-		log.Error(bodyErr)
+		logger.Logger.Error(bodyErr)
 		return 0
 	}
 	sponsorBlockResponse, marshErr := unmarshalSponsorBlockResponse(body)
 	if marshErr != nil {
-		log.Error(marshErr)
+		logger.Logger.Error(marshErr)
 		return 0
 	}
 
@@ -90,11 +102,13 @@ func calculateSkippedTime(segments []SponsorBlockResponse) float64 {
 
 		if startTime > prevStopTime {
 			skippedTime += stopTime - startTime
-		} else {
+		} else if stopTime > prevStopTime {
 			skippedTime += stopTime - prevStopTime
 		}
 
-		prevStopTime = stopTime
+		if stopTime > prevStopTime {
+			prevStopTime = stopTime
+		}
 	}
 
 	return skippedTime

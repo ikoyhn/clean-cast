@@ -1,6 +1,7 @@
 package config
 
 import (
+	"ikoyhn/podcast-sponsorblock/internal/constants"
 	"os"
 	"path"
 )
@@ -15,6 +16,10 @@ type ConfigDef struct {
 	SponsorBlockCategories string
 	Cron                   string
 	MinDuration            string
+	AudioFormat            string
+	AudioQuality           string
+	BackupCron             string
+	BackupIncludeAudio     bool
 }
 
 var Config *ConfigDef
@@ -57,6 +62,28 @@ func init() {
 
 	Config.MinDuration = os.Getenv("MIN_DURATION")
 	if Config.MinDuration == "" {
-		Config.MinDuration = "3m"
+		Config.MinDuration = constants.DefaultMinDuration
+	}
+
+	Config.AudioFormat = os.Getenv("AUDIO_FORMAT")
+	if Config.AudioFormat == "" {
+		Config.AudioFormat = "m4a"
+	}
+	println("CONFIG | Audio format set: " + Config.AudioFormat)
+
+	Config.AudioQuality = os.Getenv("AUDIO_QUALITY")
+	if Config.AudioQuality == "" {
+		Config.AudioQuality = "192k"
+	}
+	println("CONFIG | Audio quality set: " + Config.AudioQuality)
+
+	Config.BackupCron = os.Getenv("BACKUP_CRON")
+	if Config.BackupCron != "" {
+		println("CONFIG | Backup cron set: " + Config.BackupCron)
+	}
+
+	Config.BackupIncludeAudio = os.Getenv("BACKUP_INCLUDE_AUDIO") == "true"
+	if Config.BackupIncludeAudio {
+		println("CONFIG | Backup will include audio files")
 	}
 }

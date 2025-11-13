@@ -1,0 +1,756 @@
+openapi: 3.0.3
+info:
+  title: CleanCast API
+  description: |
+    CleanCast is a podcast API that converts YouTube channels and playlists into podcast feeds.
+    It automatically removes sponsored segments using SponsorBlock data and provides audio streaming.
+
+    ## Features
+    - Convert YouTube channels and playlists to RSS feeds
+    - Automatic sponsor segment removal
+    - Episode recommendations and trending content
+    - Playback analytics
+    - Audio streaming with range request support
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/ikoyhn/clean-cast
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.cleancast.example.com
+    description: Production server
+
+tags:
+  - name: health
+    description: Health check endpoints
+  - name: podcasts
+    description: Podcast feed operations
+  - name: media
+    description: Audio streaming endpoints
+  - name: recommendations
+    description: Episode and podcast recommendations
+  - name: metrics
+    description: Monitoring and metrics
+
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      description: Basic health check endpoint that returns a simple greeting
+      tags:
+        - health
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello, World!"
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the application
+      tags:
+        - health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ready:
+    get:
+      summary: Readiness check
+      description: Returns the readiness status of the application
+      tags:
+        - health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Exposes Prometheus-compatible metrics for monitoring
+      tags:
+        - metrics
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /channel/{channelId}:
+    get:
+      summary: Get channel RSS feed
+      description: |
+        Returns an RSS feed for a YouTube channel with sponsor segments removed.
+        Episodes are automatically filtered based on minimum duration settings.
+      tags:
+        - podcasts
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Date'
+      responses:
+        '200':
+          description: RSS feed XML
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+                format: xml
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - API key required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - ApiKeyAuth: []
+
+  /rss/{youtubePlaylistId}:
+    get:
+      summary: Get playlist RSS feed
+      description: |
+        Returns an RSS feed for a YouTube playlist with sponsor segments removed.
+        All episodes in the playlist are included.
+      tags:
+        - podcasts
+      parameters:
+        - $ref: '#/components/parameters/PlaylistId'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Date'
+      responses:
+        '200':
+          description: RSS feed XML
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+                format: xml
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - API key required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - ApiKeyAuth: []
+
+  /media/{youtubeVideoId}:
+    get:
+      summary: Stream episode audio
+      description: |
+        Streams the audio file for a specific episode.
+        Supports HTTP range requests for seeking.
+        Downloads and processes the video on first request.
+        Automatically removes sponsor segments using SponsorBlock data.
+      tags:
+        - media
+      parameters:
+        - name: youtubeVideoId
+          in: path
+          required: true
+          description: YouTube video ID (11 characters)
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_-]{11}$'
+            example: "dQw4w9WgXcQ"
+        - name: Range
+          in: header
+          required: false
+          description: HTTP range header for partial content requests
+          schema:
+            type: string
+            example: "bytes=0-1023"
+      responses:
+        '200':
+          description: Full audio file
+          content:
+            audio/mp4:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial content (range request)
+          headers:
+            Content-Range:
+              schema:
+                type: string
+              description: Range of bytes being returned
+          content:
+            audio/mp4:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid video ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - API key required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Video not found or download failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - ApiKeyAuth: []
+
+  /api/recommendations/similar/{podcastId}:
+    get:
+      summary: Get similar podcasts
+      description: |
+        Returns podcasts similar to the specified podcast based on:
+        - Category matching
+        - Keyword overlap in descriptions
+        - Content similarity analysis
+      tags:
+        - recommendations
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          description: YouTube channel ID or playlist ID
+          schema:
+            type: string
+            example: "UCXuqSBlHAE6Xw-yeJA0Tunw"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of similar podcasts to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: List of similar podcasts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimilarPodcastsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Podcast not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/recommendations/trending:
+    get:
+      summary: Get trending episodes
+      description: |
+        Returns the most played episodes in the last 7 days.
+        Trending is calculated based on playback analytics data.
+      tags:
+        - recommendations
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of trending episodes to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: List of trending episodes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendingEpisodesResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/recommendations/related/{videoId}:
+    get:
+      summary: Get related episodes
+      description: |
+        Returns episodes from the same channel or playlist as the specified video.
+        Useful for discovering more content from the same creator.
+      tags:
+        - recommendations
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          description: YouTube video ID
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_-]{11}$'
+            example: "dQw4w9WgXcQ"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of related episodes to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: List of related episodes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelatedEpisodesResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Episode not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/recommendations/for-you:
+    get:
+      summary: Get personalized recommendations
+      description: |
+        Returns personalized episode recommendations based on:
+        - Your listening history (last 30 days)
+        - Favorite podcasts and channels
+        - Similar content to what you've enjoyed
+        - Trending content in your preferred categories
+      tags:
+        - recommendations
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of recommendations to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: List of personalized recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalizedRecommendationsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+  parameters:
+    ChannelId:
+      name: channelId
+      in: path
+      required: true
+      description: YouTube channel ID (typically starts with UC)
+      schema:
+        type: string
+        pattern: '^UC[a-zA-Z0-9_-]{22}$'
+        example: "UCXuqSBlHAE6Xw-yeJA0Tunw"
+
+    PlaylistId:
+      name: youtubePlaylistId
+      in: path
+      required: true
+      description: YouTube playlist ID
+      schema:
+        type: string
+        example: "PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf"
+
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of episodes to include in the feed
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        example: 10
+
+    Date:
+      name: date
+      in: query
+      required: false
+      description: Filter episodes published after this date (format MM-DD-YYYY)
+      schema:
+        type: string
+        format: date
+        pattern: '^\d{2}-\d{2}-\d{4}$'
+        example: "01-01-2024"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        version:
+          type: string
+          example: "1.0.0"
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [ok, error]
+              example: "ok"
+            storage:
+              type: string
+              enum: [ok, error]
+              example: "ok"
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code for programmatic error handling
+          example: "INVALID_PARAM"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid parameter provided"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+          example:
+            parameter: "channelId"
+            value: "invalid-id"
+        request_id:
+          type: string
+          description: Request ID for debugging
+          example: "req-123456789"
+
+    Podcast:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Podcast ID (YouTube channel or playlist ID)
+          example: "UCXuqSBlHAE6Xw-yeJA0Tunw"
+        apple_id:
+          type: string
+          description: Apple Podcast ID (if available)
+          example: "1234567890"
+        podcast_name:
+          type: string
+          description: Name of the podcast
+          example: "Tech Talks Daily"
+        description:
+          type: string
+          description: Podcast description
+          example: "Daily discussions about technology and innovation"
+        category:
+          type: string
+          description: Podcast category
+          example: "Technology"
+        posted_date:
+          type: string
+          description: When the podcast was first indexed
+          example: "2024-01-01"
+        image_url:
+          type: string
+          format: uri
+          description: URL to podcast artwork
+          example: "https://example.com/artwork.jpg"
+        last_build_date:
+          type: string
+          format: date-time
+          description: Last time the feed was updated
+          example: "2024-01-15T10:30:00Z"
+        artist_name:
+          type: string
+          description: Creator/artist name
+          example: "John Doe"
+        explicit:
+          type: string
+          enum: [yes, no, clean]
+          description: Content rating
+          example: "no"
+
+    Episode:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Internal episode ID
+          example: 12345
+        youtube_video_id:
+          type: string
+          description: YouTube video ID
+          example: "dQw4w9WgXcQ"
+        episode_name:
+          type: string
+          description: Episode title
+          example: "Introduction to AI"
+        episode_description:
+          type: string
+          description: Episode description
+          example: "An overview of artificial intelligence concepts"
+        published_date:
+          type: string
+          format: date-time
+          description: When the episode was published
+          example: "2024-01-15T10:00:00Z"
+        type:
+          type: string
+          enum: [CHANNEL, PLAYLIST]
+          description: Source type
+          example: "CHANNEL"
+        podcast_id:
+          type: string
+          description: Parent podcast ID
+          example: "UCXuqSBlHAE6Xw-yeJA0Tunw"
+        duration:
+          type: integer
+          description: Episode duration in nanoseconds
+          example: 3600000000000
+
+    SimilarPodcast:
+      type: object
+      properties:
+        podcast:
+          $ref: '#/components/schemas/Podcast'
+        similarity_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Similarity score (0-1)
+          example: 0.85
+
+    TrendingEpisode:
+      type: object
+      properties:
+        episode:
+          $ref: '#/components/schemas/Episode'
+        play_count:
+          type: integer
+          description: Number of plays in the last 7 days
+          example: 150
+
+    SimilarPodcastsResponse:
+      type: object
+      properties:
+        podcast_id:
+          type: string
+          description: Source podcast ID
+          example: "UCXuqSBlHAE6Xw-yeJA0Tunw"
+        limit:
+          type: integer
+          description: Maximum results requested
+          example: 10
+        results:
+          type: integer
+          description: Number of results returned
+          example: 8
+        similar:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimilarPodcast'
+
+    TrendingEpisodesResponse:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Time period for trending calculation
+          example: "last_7_days"
+        limit:
+          type: integer
+          description: Maximum results requested
+          example: 10
+        results:
+          type: integer
+          description: Number of results returned
+          example: 10
+        episodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendingEpisode'
+
+    RelatedEpisodesResponse:
+      type: object
+      properties:
+        video_id:
+          type: string
+          description: Source video ID
+          example: "dQw4w9WgXcQ"
+        limit:
+          type: integer
+          description: Maximum results requested
+          example: 10
+        results:
+          type: integer
+          description: Number of results returned
+          example: 10
+        episodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Episode'
+
+    PersonalizedRecommendationsResponse:
+      type: object
+      properties:
+        strategy:
+          type: string
+          description: Recommendation strategy used
+          example: "personalized_based_on_history"
+        limit:
+          type: integer
+          description: Maximum results requested
+          example: 10
+        results:
+          type: integer
+          description: Number of results returned
+          example: 10
+        episodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Episode'

@@ -8,24 +8,24 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/gommon/log"
+	"ikoyhn/podcast-sponsorblock/internal/logger"
 )
 
 const ITUNES_SEARCH_URL = "https://itunes.apple.com/search?term=%s&limit=1&media=podcast&callback="
 
 func GetApplePodcastData(podcastName string) LookupResponse {
-	log.Debug("[RSS FEED] Looking up podcast in Apple Search API...")
+	logger.Logger.Debug().Msg("[RSS FEED] Looking up podcast in Apple Search API...")
 	resp, err := http.Get(fmt.Sprintf(ITUNES_SEARCH_URL, strings.ReplaceAll(podcastName, " ", "")))
 	if err != nil {
-		log.Error(err)
+		logger.Logger.Error().Err(err).Msg("")
 	}
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr != nil {
-		log.Error(bodyErr)
+		logger.Logger.Error(bodyErr)
 	}
 	lookupResponse, marshErr := unmarshalAppleLookupResponse(body)
 	if marshErr != nil {
-		log.Error(marshErr)
+		logger.Logger.Error(marshErr)
 	}
 	return lookupResponse
 }

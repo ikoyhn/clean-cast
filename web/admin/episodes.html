@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Episodes - Clean Cast Admin</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="bg-slate-900 text-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar flex-shrink-0 hidden md:block">
+      <div class="p-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i class="fas fa-podcast text-blue-500"></i>
+          Clean Cast
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Admin Panel</p>
+      </div>
+
+      <nav class="mt-6">
+        <a href="/admin" class="sidebar-item">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/podcasts" class="sidebar-item">
+          <i class="fas fa-podcast"></i>
+          <span>Podcasts</span>
+        </a>
+        <a href="/admin/episodes" class="sidebar-item active">
+          <i class="fas fa-list"></i>
+          <span>Episodes</span>
+        </a>
+        <a href="/admin/analytics" class="sidebar-item">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="/admin/settings" class="sidebar-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Header -->
+      <header class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Episode Management</h2>
+            <p class="text-sm text-gray-400 mt-1">Browse and manage podcast episodes</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="showFilterModal()" class="btn btn-secondary">
+              <i class="fas fa-filter"></i>
+              Filters
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Search and Filters -->
+        <div class="card mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2 search-container">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                id="searchInput"
+                class="form-input search-input"
+                placeholder="Search episodes by title or description..."
+                onkeyup="debounce(handleSearch, 300)()"
+              >
+            </div>
+            <div class="flex gap-3">
+              <button onclick="loadEpisodes()" class="btn btn-secondary flex-1">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Filters Display -->
+          <div id="activeFilters" class="mt-4 hidden">
+            <div class="flex flex-wrap gap-2">
+              <span class="text-sm text-gray-400">Active filters:</span>
+              <div id="filterTags" class="flex flex-wrap gap-2"></div>
+              <button onclick="clearFilters()" class="text-sm text-blue-400 hover:text-blue-300">
+                Clear all
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk Selection Actions -->
+        <div id="bulkActions" class="card mb-6 hidden">
+          <div class="flex items-center justify-between">
+            <p class="text-gray-300">
+              <span id="selectedCount">0</span> episodes selected
+            </p>
+            <div class="flex gap-3">
+              <button onclick="deleteSelected()" class="btn btn-danger">
+                <i class="fas fa-trash"></i>
+                Delete Selected
+              </button>
+              <button onclick="clearSelection()" class="btn btn-secondary">
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Episodes Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th class="w-12">
+                  <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                </th>
+                <th>Episode</th>
+                <th>Podcast</th>
+                <th>Duration</th>
+                <th>Published</th>
+                <th>Plays</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="episodesTableBody">
+              <!-- Table rows will be loaded here -->
+              <tr>
+                <td colspan="7" class="text-center py-12">
+                  <div class="flex justify-center">
+                    <div class="spinner"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-6"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let searchQuery = '';
+    const itemsPerPage = 20;
+    let selectedEpisodes = new Set();
+    let filters = {
+      podcast_id: getQueryParam('podcast_id') || '',
+      type: '',
+      start_date: '',
+      end_date: '',
+      min_duration: '',
+      max_duration: ''
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadEpisodes();
+      updateFilterDisplay();
+    });
+
+    // Load episodes
+    async function loadEpisodes(page = 1) {
+      currentPage = page;
+      const tbody = document.getElementById('episodesTableBody');
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-12"><div class="flex justify-center"><div class="spinner"></div></div></td></tr>';
+
+      try {
+        const offset = (page - 1) * itemsPerPage;
+        const params = {
+          query: searchQuery,
+          limit: itemsPerPage,
+          offset: offset,
+          ...filters
+        };
+
+        // Remove empty filters
+        Object.keys(params).forEach(key => {
+          if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+          }
+        });
+
+        const result = await api.searchEpisodes(params);
+        const episodes = result.episodes || [];
+        const total = result.total || 0;
+        totalPages = Math.ceil(total / itemsPerPage);
+
+        if (episodes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No episodes found</td></tr>';
+          document.getElementById('pagination').innerHTML = '';
+          return;
+        }
+
+        let html = '';
+        for (const episode of episodes) {
+          const isSelected = selectedEpisodes.has(episode.youtube_video_id);
+          html += `
+            <tr class="${isSelected ? 'bg-slate-700' : ''}">
+              <td>
+                <input type="checkbox"
+                       ${isSelected ? 'checked' : ''}
+                       onchange="toggleEpisodeSelection('${episode.youtube_video_id}', this.checked)">
+              </td>
+              <td>
+                <div class="flex items-center gap-3">
+                  <img src="${episode.image_url || '/static/images/episode-placeholder.png'}"
+                       alt="${sanitizeHTML(episode.episode_name)}"
+                       class="w-16 h-16 rounded object-cover"
+                       onerror="this.src='/static/images/episode-placeholder.png'">
+                  <div class="min-w-0 max-w-md">
+                    <p class="font-medium text-white truncate">${sanitizeHTML(episode.episode_name)}</p>
+                    <p class="text-sm text-gray-400 truncate line-clamp-2">
+                      ${sanitizeHTML(truncateText(episode.episode_description || '', 100))}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="text-sm">${sanitizeHTML(episode.podcast_name || 'Unknown')}</span>
+              </td>
+              <td>${formatDuration(episode.duration)}</td>
+              <td>${formatDate(episode.published_date)}</td>
+              <td>${formatNumber(episode.play_count || 0)}</td>
+              <td class="text-right">
+                <div class="flex justify-end gap-2">
+                  <button onclick="playEpisode('${episode.youtube_video_id}')"
+                          class="text-green-400 hover:text-green-300"
+                          title="Play">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button onclick="viewAnalytics('${episode.youtube_video_id}')"
+                          class="text-blue-400 hover:text-blue-300"
+                          title="Analytics">
+                    <i class="fas fa-chart-bar"></i>
+                  </button>
+                  <button onclick="viewTranscript('${episode.youtube_video_id}')"
+                          class="text-purple-400 hover:text-purple-300"
+                          title="Transcript">
+                    <i class="fas fa-closed-captioning"></i>
+                  </button>
+                  <button onclick="deleteEpisode('${episode.youtube_video_id}')"
+                          class="text-red-400 hover:text-red-300"
+                          title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+
+        tbody.innerHTML = html;
+        updatePagination();
+        updateBulkActions();
+      } catch (error) {
+        console.error('Failed to load episodes:', error);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-400">Failed to load episodes</td></tr>';
+        showToast('Failed to load episodes: ' + parseError(error), 'error');
+      }
+    }
+
+    // Handle search
+    function handleSearch() {
+      searchQuery = document.getElementById('searchInput').value.trim();
+      loadEpisodes(1);
+    }
+
+    // Update pagination
+    function updatePagination() {
+      const paginationHtml = createPagination(currentPage, totalPages, 'loadEpisodes');
+      document.getElementById('pagination').innerHTML = paginationHtml;
+    }
+
+    // Toggle episode selection
+    function toggleEpisodeSelection(episodeId, checked) {
+      if (checked) {
+        selectedEpisodes.add(episodeId);
+      } else {
+        selectedEpisodes.delete(episodeId);
+      }
+      updateBulkActions();
+      loadEpisodes(currentPage);
+    }
+
+    // Toggle select all
+    function toggleSelectAll(checkbox) {
+      const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        const episodeId = cb.onchange.toString().match(/'([^']+)'/)[1];
+        if (checkbox.checked) {
+          selectedEpisodes.add(episodeId);
+          cb.checked = true;
+        } else {
+          selectedEpisodes.delete(episodeId);
+          cb.checked = false;
+        }
+      });
+      updateBulkActions();
+      loadEpisodes(currentPage);
+    }
+
+    // Update bulk actions visibility
+    function updateBulkActions() {
+      const bulkActions = document.getElementById('bulkActions');
+      const selectedCount = document.getElementById('selectedCount');
+
+      if (selectedEpisodes.size > 0) {
+        bulkActions.classList.remove('hidden');
+        selectedCount.textContent = selectedEpisodes.size;
+      } else {
+        bulkActions.classList.add('hidden');
+      }
+    }
+
+    // Clear selection
+    function clearSelection() {
+      selectedEpisodes.clear();
+      document.getElementById('selectAll').checked = false;
+      updateBulkActions();
+      loadEpisodes(currentPage);
+    }
+
+    // Delete selected episodes
+    async function deleteSelected() {
+      if (selectedEpisodes.size === 0) {
+        showToast('No episodes selected', 'warning');
+        return;
+      }
+
+      confirmDialog(
+        `Delete ${selectedEpisodes.size} selected episode(s)? This action cannot be undone.`,
+        async () => {
+          try {
+            const episodeIds = Array.from(selectedEpisodes);
+            const result = await api.batchDeleteEpisodes(episodeIds);
+            showToast(`Delete job started. Job ID: ${result.job_id}`, 'success');
+            clearSelection();
+            setTimeout(() => loadEpisodes(currentPage), 2000);
+          } catch (error) {
+            showToast('Failed to delete episodes: ' + parseError(error), 'error');
+          }
+        }
+      );
+    }
+
+    // Delete single episode
+    async function deleteEpisode(episodeId) {
+      confirmDialog(
+        'Delete this episode? This action cannot be undone.',
+        async () => {
+          try {
+            const result = await api.batchDeleteEpisodes([episodeId]);
+            showToast(`Delete job started. Job ID: ${result.job_id}`, 'success');
+            setTimeout(() => loadEpisodes(currentPage), 2000);
+          } catch (error) {
+            showToast('Failed to delete episode: ' + parseError(error), 'error');
+          }
+        }
+      );
+    }
+
+    // Play episode
+    function playEpisode(episodeId) {
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/media/${episodeId}`;
+      window.open(url, '_blank');
+    }
+
+    // View analytics
+    function viewAnalytics(episodeId) {
+      window.location.href = `/admin/analytics?episode_id=${episodeId}`;
+    }
+
+    // View transcript
+    async function viewTranscript(episodeId) {
+      try {
+        showToast('Loading transcript...', 'info', 1000);
+        const transcript = await api.getTranscript(episodeId);
+
+        if (!transcript || !transcript.segments || transcript.segments.length === 0) {
+          showToast('No transcript available for this episode', 'warning');
+          return;
+        }
+
+        let transcriptHtml = '<div class="space-y-2 max-h-96 overflow-y-auto">';
+        transcript.segments.forEach(segment => {
+          transcriptHtml += `
+            <div class="p-2 bg-slate-800 rounded">
+              <span class="text-blue-400 text-sm">${formatDuration(segment.start)}</span>
+              <p class="text-gray-300 mt-1">${sanitizeHTML(segment.text)}</p>
+            </div>
+          `;
+        });
+        transcriptHtml += '</div>';
+
+        showModal('Episode Transcript', transcriptHtml, [
+          { id: 'closeTranscript', text: 'Close', type: 'secondary' }
+        ]);
+
+        document.getElementById('closeTranscript').addEventListener('click', closeModal);
+      } catch (error) {
+        showToast('Failed to load transcript: ' + parseError(error), 'error');
+      }
+    }
+
+    // Show filter modal
+    function showFilterModal() {
+      const modal = showModal('Filter Episodes', `
+        <div class="space-y-4">
+          <div class="form-group">
+            <label class="form-label">Episode Type</label>
+            <select id="filterType" class="form-select">
+              <option value="">All Types</option>
+              <option value="CHANNEL" ${filters.type === 'CHANNEL' ? 'selected' : ''}>Channel</option>
+              <option value="PLAYLIST" ${filters.type === 'PLAYLIST' ? 'selected' : ''}>Playlist</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" id="filterStartDate" class="form-input"
+                     value="${filters.start_date}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" id="filterEndDate" class="form-input"
+                     value="${filters.end_date}">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label">Min Duration</label>
+              <input type="text" id="filterMinDuration" class="form-input"
+                     placeholder="e.g., 30m"
+                     value="${filters.min_duration}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Duration</label>
+              <input type="text" id="filterMaxDuration" class="form-input"
+                     placeholder="e.g., 2h"
+                     value="${filters.max_duration}">
+            </div>
+          </div>
+
+          <p class="text-sm text-gray-400">
+            Duration format: 30s, 5m, 1h, 1h30m
+          </p>
+        </div>
+      `, [
+        {
+          id: 'applyFiltersBtn',
+          text: 'Apply Filters',
+          type: 'primary'
+        },
+        {
+          id: 'resetFiltersBtn',
+          text: 'Reset',
+          type: 'secondary'
+        }
+      ]);
+
+      document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+        filters.type = document.getElementById('filterType').value;
+        filters.start_date = document.getElementById('filterStartDate').value;
+        filters.end_date = document.getElementById('filterEndDate').value;
+        filters.min_duration = document.getElementById('filterMinDuration').value;
+        filters.max_duration = document.getElementById('filterMaxDuration').value;
+
+        closeModal();
+        updateFilterDisplay();
+        loadEpisodes(1);
+      });
+
+      document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+        filters = {
+          podcast_id: getQueryParam('podcast_id') || '',
+          type: '',
+          start_date: '',
+          end_date: '',
+          min_duration: '',
+          max_duration: ''
+        };
+        closeModal();
+        updateFilterDisplay();
+        loadEpisodes(1);
+      });
+    }
+
+    // Update filter display
+    function updateFilterDisplay() {
+      const activeFiltersDiv = document.getElementById('activeFilters');
+      const filterTags = document.getElementById('filterTags');
+
+      const activeFilters = Object.entries(filters).filter(([key, value]) => value !== '');
+
+      if (activeFilters.length === 0) {
+        activeFiltersDiv.classList.add('hidden');
+        return;
+      }
+
+      activeFiltersDiv.classList.remove('hidden');
+      filterTags.innerHTML = '';
+
+      activeFilters.forEach(([key, value]) => {
+        const tag = document.createElement('span');
+        tag.className = 'badge badge-primary flex items-center gap-2';
+        tag.innerHTML = `
+          ${key.replace('_', ' ')}: ${value}
+          <button onclick="removeFilter('${key}')" class="hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        filterTags.appendChild(tag);
+      });
+    }
+
+    // Remove single filter
+    function removeFilter(key) {
+      filters[key] = '';
+      updateFilterDisplay();
+      loadEpisodes(1);
+    }
+
+    // Clear all filters
+    function clearFilters() {
+      filters = {
+        podcast_id: getQueryParam('podcast_id') || '',
+        type: '',
+        start_date: '',
+        end_date: '',
+        min_duration: '',
+        max_duration: ''
+      };
+      updateFilterDisplay();
+      loadEpisodes(1);
+    }
+  </script>
+</body>
+</html>

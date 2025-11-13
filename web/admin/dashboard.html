@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Clean Cast Admin</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="bg-slate-900 text-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar flex-shrink-0 hidden md:block">
+      <div class="p-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i class="fas fa-podcast text-blue-500"></i>
+          Clean Cast
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Admin Panel</p>
+      </div>
+
+      <nav class="mt-6">
+        <a href="/admin" class="sidebar-item active">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/podcasts" class="sidebar-item">
+          <i class="fas fa-podcast"></i>
+          <span>Podcasts</span>
+        </a>
+        <a href="/admin/episodes" class="sidebar-item">
+          <i class="fas fa-list"></i>
+          <span>Episodes</span>
+        </a>
+        <a href="/admin/analytics" class="sidebar-item">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="/admin/settings" class="sidebar-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="absolute bottom-6 left-0 right-0 px-6">
+        <div class="card p-4">
+          <p class="text-xs text-gray-400 mb-2">System Status</p>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span class="text-sm text-gray-300">Online</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Header -->
+      <header class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Dashboard</h2>
+            <p class="text-sm text-gray-400 mt-1">Welcome back! Here's what's happening.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <button onclick="refreshDashboard()" class="btn btn-secondary">
+              <i class="fas fa-sync-alt"></i>
+              Refresh
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Total Podcasts</p>
+                <p class="stat-value" id="totalPodcasts">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="podcastsChange">--</p>
+              </div>
+              <div class="text-blue-500 text-3xl">
+                <i class="fas fa-podcast"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Total Episodes</p>
+                <p class="stat-value" id="totalEpisodes">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="episodesChange">--</p>
+              </div>
+              <div class="text-purple-500 text-3xl">
+                <i class="fas fa-list"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Total Plays</p>
+                <p class="stat-value" id="totalPlays">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="playsChange">--</p>
+              </div>
+              <div class="text-green-500 text-3xl">
+                <i class="fas fa-play-circle"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Storage Used</p>
+                <p class="stat-value text-2xl" id="storageUsed">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="storageInfo">--</p>
+              </div>
+              <div class="text-yellow-500 text-3xl">
+                <i class="fas fa-database"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <!-- Plays Over Time Chart -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-chart-line text-blue-500"></i>
+              Plays Over Time (Last 7 Days)
+            </h3>
+            <div class="chart-container">
+              <canvas id="playsChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Top Episodes Chart -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-fire text-red-500"></i>
+              Most Popular Episodes
+            </h3>
+            <div class="chart-container">
+              <canvas id="topEpisodesChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity & Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Recent Activity -->
+          <div class="card lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i class="fas fa-history text-purple-500"></i>
+                Recent Activity
+              </h3>
+              <button onclick="loadRecentActivity()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+            <div id="recentActivity" class="space-y-3">
+              <!-- Activity items will be loaded here -->
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-bolt text-yellow-500"></i>
+              Quick Actions
+            </h3>
+            <div class="space-y-3">
+              <button onclick="window.location.href='/admin/podcasts?action=add'"
+                      class="btn btn-primary w-full justify-center">
+                <i class="fas fa-plus"></i>
+                Add Podcast
+              </button>
+              <button onclick="refreshAllPodcasts()"
+                      class="btn btn-secondary w-full justify-center">
+                <i class="fas fa-sync-alt"></i>
+                Refresh All
+              </button>
+              <button onclick="createBackup()"
+                      class="btn btn-secondary w-full justify-center">
+                <i class="fas fa-download"></i>
+                Create Backup
+              </button>
+              <button onclick="window.location.href='/admin/analytics'"
+                      class="btn btn-secondary w-full justify-center">
+                <i class="fas fa-chart-bar"></i>
+                View Analytics
+              </button>
+              <button onclick="viewLogs()"
+                      class="btn btn-secondary w-full justify-center">
+                <i class="fas fa-file-alt"></i>
+                View Logs
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">System Health</h4>
+            <div id="systemHealth" class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-400">API Status:</span>
+                <span class="badge badge-success">Healthy</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Database:</span>
+                <span class="badge badge-success">Connected</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Cache:</span>
+                <span class="badge badge-success">Active</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">Active Jobs</h4>
+            <div id="activeJobs">
+              <p class="text-gray-400 text-sm">No active jobs</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">Webhooks</h4>
+            <div id="webhookStatus">
+              <div class="flex justify-between">
+                <span class="text-gray-400">Active:</span>
+                <span id="activeWebhooks">--</span>
+              </div>
+              <div class="flex justify-between mt-2">
+                <span class="text-gray-400">Last Delivery:</span>
+                <span class="text-sm" id="lastWebhookDelivery">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script>
+    let playsChart = null;
+    let topEpisodesChart = null;
+
+    // Initialize dashboard
+    async function initDashboard() {
+      try {
+        await loadDashboardStats();
+        await loadCharts();
+        await loadRecentActivity();
+        await loadSystemHealth();
+      } catch (error) {
+        console.error('Failed to initialize dashboard:', error);
+        showToast('Failed to load dashboard data', 'error');
+      }
+    }
+
+    // Load dashboard statistics
+    async function loadDashboardStats() {
+      try {
+        const summary = await api.getAnalyticsSummary('7d');
+
+        // Update stats
+        document.getElementById('totalPodcasts').textContent = formatNumber(summary.total_podcasts || 0);
+        document.getElementById('totalEpisodes').textContent = formatNumber(summary.total_episodes || 0);
+        document.getElementById('totalPlays').textContent = formatNumber(summary.total_plays || 0);
+        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_used || 0);
+
+        // Update change indicators
+        document.getElementById('podcastsChange').textContent =
+          summary.podcasts_change >= 0 ? `+${summary.podcasts_change} this week` : `${summary.podcasts_change} this week`;
+        document.getElementById('episodesChange').textContent =
+          summary.episodes_change >= 0 ? `+${summary.episodes_change} this week` : `${summary.episodes_change} this week`;
+        document.getElementById('playsChange').textContent =
+          summary.plays_change >= 0 ? `+${summary.plays_change}% vs last week` : `${summary.plays_change}% vs last week`;
+        document.getElementById('storageInfo').textContent = `${summary.audio_files_count || 0} files`;
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    }
+
+    // Load charts
+    async function loadCharts() {
+      try {
+        const dashboardData = await api.getDashboardAnalytics('7d');
+
+        // Plays over time chart
+        const playsCtx = document.getElementById('playsChart').getContext('2d');
+        if (playsChart) playsChart.destroy();
+
+        playsChart = new Chart(playsCtx, {
+          type: 'line',
+          data: {
+            labels: dashboardData.plays_over_time?.labels || [],
+            datasets: [{
+              label: 'Plays',
+              data: dashboardData.plays_over_time?.data || [],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+
+        // Top episodes chart
+        const topCtx = document.getElementById('topEpisodesChart').getContext('2d');
+        if (topEpisodesChart) topEpisodesChart.destroy();
+
+        const popularEpisodes = await api.getPopularEpisodes(5, '7d');
+        const episodeNames = popularEpisodes.episodes?.map(e => truncateText(e.episode_name, 30)) || [];
+        const episodePlays = popularEpisodes.episodes?.map(e => e.play_count) || [];
+
+        topEpisodesChart = new Chart(topCtx, {
+          type: 'bar',
+          data: {
+            labels: episodeNames,
+            datasets: [{
+              label: 'Plays',
+              data: episodePlays,
+              backgroundColor: '#10b981',
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              },
+              y: {
+                grid: { display: false },
+                ticks: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to load charts:', error);
+      }
+    }
+
+    // Load recent activity
+    async function loadRecentActivity() {
+      const container = document.getElementById('recentActivity');
+      try {
+        const popular = await api.getPopularEpisodes(10, '24h');
+
+        if (!popular.episodes || popular.episodes.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">No recent activity</p>';
+          return;
+        }
+
+        let html = '';
+        popular.episodes.forEach(episode => {
+          html += `
+            <div class="flex items-start gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
+              <div class="text-blue-500 text-xl">
+                <i class="fas fa-play-circle"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-white truncate">${sanitizeHTML(episode.episode_name)}</p>
+                <p class="text-sm text-gray-400">${episode.play_count} plays • ${formatDate(episode.last_played)}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load recent activity:', error);
+        container.innerHTML = '<p class="text-red-400 text-sm">Failed to load activity</p>';
+      }
+    }
+
+    // Load system health
+    async function loadSystemHealth() {
+      try {
+        const health = await api.healthCheck();
+        const webhooks = await api.getWebhooks();
+
+        const activeWebhooksCount = webhooks.filter(w => w.enabled).length;
+        document.getElementById('activeWebhooks').textContent = activeWebhooksCount;
+
+        if (webhooks.length > 0) {
+          document.getElementById('lastWebhookDelivery').textContent = 'Just now';
+        } else {
+          document.getElementById('lastWebhookDelivery').textContent = 'Never';
+        }
+      } catch (error) {
+        console.error('Failed to load system health:', error);
+      }
+    }
+
+    // Refresh dashboard
+    async function refreshDashboard() {
+      showToast('Refreshing dashboard...', 'info', 1000);
+      await initDashboard();
+      showToast('Dashboard refreshed', 'success');
+    }
+
+    // Refresh all podcasts
+    async function refreshAllPodcasts() {
+      try {
+        const podcasts = await api.getPodcasts(1000, 0);
+        const podcastIds = podcasts.podcasts?.map(p => p.id) || [];
+
+        if (podcastIds.length === 0) {
+          showToast('No podcasts to refresh', 'warning');
+          return;
+        }
+
+        confirmDialog(
+          `Are you sure you want to refresh all ${podcastIds.length} podcasts? This may take a while.`,
+          async () => {
+            try {
+              const result = await api.batchRefreshPodcasts(podcastIds);
+              showToast(`Refresh job started. Job ID: ${result.job_id}`, 'success');
+            } catch (error) {
+              showToast('Failed to start refresh job: ' + parseError(error), 'error');
+            }
+          }
+        );
+      } catch (error) {
+        showToast('Failed to get podcasts: ' + parseError(error), 'error');
+      }
+    }
+
+    // Create backup
+    async function createBackup() {
+      confirmDialog(
+        'Do you want to include audio files in the backup? This will take longer.',
+        async () => {
+          try {
+            showToast('Creating backup with audio...', 'info');
+            await api.createBackup(true);
+            showToast('Backup created successfully!', 'success');
+          } catch (error) {
+            showToast('Failed to create backup: ' + parseError(error), 'error');
+          }
+        },
+        async () => {
+          try {
+            showToast('Creating backup without audio...', 'info');
+            await api.createBackup(false);
+            showToast('Backup created successfully!', 'success');
+          } catch (error) {
+            showToast('Failed to create backup: ' + parseError(error), 'error');
+          }
+        }
+      );
+    }
+
+    // View logs
+    function viewLogs() {
+      showToast('Log viewing feature coming soon!', 'info');
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

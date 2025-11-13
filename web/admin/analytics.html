@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - Clean Cast Admin</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="bg-slate-900 text-gray-100">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar flex-shrink-0 hidden md:block">
+      <div class="p-6">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i class="fas fa-podcast text-blue-500"></i>
+          Clean Cast
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Admin Panel</p>
+      </div>
+
+      <nav class="mt-6">
+        <a href="/admin" class="sidebar-item">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/podcasts" class="sidebar-item">
+          <i class="fas fa-podcast"></i>
+          <span>Podcasts</span>
+        </a>
+        <a href="/admin/episodes" class="sidebar-item">
+          <i class="fas fa-list"></i>
+          <span>Episodes</span>
+        </a>
+        <a href="/admin/analytics" class="sidebar-item active">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </a>
+        <a href="/admin/settings" class="sidebar-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Header -->
+      <header class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Analytics Dashboard</h2>
+            <p class="text-sm text-gray-400 mt-1">Insights and statistics</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="periodSelect" class="form-select" onchange="changePeriod(this.value)">
+              <option value="24h">Last 24 Hours</option>
+              <option value="7d" selected>Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="1y">Last Year</option>
+            </select>
+            <button onclick="refreshAnalytics()" class="btn btn-secondary">
+              <i class="fas fa-sync-alt"></i>
+              Refresh
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Total Plays</p>
+                <p class="stat-value" id="totalPlays">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="playsChange">--</p>
+              </div>
+              <div class="text-blue-500 text-3xl">
+                <i class="fas fa-play-circle"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Unique Episodes</p>
+                <p class="stat-value" id="uniqueEpisodes">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="episodesInfo">--</p>
+              </div>
+              <div class="text-purple-500 text-3xl">
+                <i class="fas fa-music"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Total Listen Time</p>
+                <p class="stat-value text-2xl" id="totalListenTime">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="listenTimeInfo">--</p>
+              </div>
+              <div class="text-green-500 text-3xl">
+                <i class="fas fa-clock"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="stat-label">Avg. Episode Length</p>
+                <p class="stat-value text-2xl" id="avgEpisodeLength">--</p>
+                <p class="text-sm text-gray-400 mt-2" id="avgLengthInfo">--</p>
+              </div>
+              <div class="text-yellow-500 text-3xl">
+                <i class="fas fa-stopwatch"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <!-- Plays Over Time -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-chart-line text-blue-500"></i>
+              Plays Over Time
+            </h3>
+            <div class="chart-container">
+              <canvas id="playsOverTimeChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Listen Time Trends -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-chart-area text-green-500"></i>
+              Listen Time Trends
+            </h3>
+            <div class="chart-container">
+              <canvas id="listenTimeChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popular Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <!-- Top Episodes -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-fire text-red-500"></i>
+              Top Episodes
+            </h3>
+            <div id="topEpisodesList" class="space-y-3">
+              <div class="flex justify-center py-8">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Podcasts -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i class="fas fa-trophy text-yellow-500"></i>
+              Top Podcasts
+            </h3>
+            <div class="chart-container">
+              <canvas id="topPodcastsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Geographic Distribution -->
+        <div class="card mb-8">
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i class="fas fa-globe text-blue-500"></i>
+            Geographic Distribution
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="geographicData">
+            <div class="flex justify-center py-8 col-span-full">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Engagement Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">Episode Types</h4>
+            <div class="chart-container" style="height: 200px;">
+              <canvas id="episodeTypesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">Peak Listening Hours</h4>
+            <div class="chart-container" style="height: 200px;">
+              <canvas id="peakHoursChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4 class="font-semibold mb-3 text-gray-300">Engagement Score</h4>
+            <div class="flex items-center justify-center h-48">
+              <div class="text-center">
+                <div class="text-6xl font-bold text-blue-500" id="engagementScore">--</div>
+                <p class="text-gray-400 mt-2">out of 100</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script>
+    let currentPeriod = '7d';
+    let charts = {};
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAnalytics();
+    });
+
+    // Change period
+    function changePeriod(period) {
+      currentPeriod = period;
+      loadAnalytics();
+    }
+
+    // Refresh analytics
+    function refreshAnalytics() {
+      showToast('Refreshing analytics...', 'info', 1000);
+      loadAnalytics();
+    }
+
+    // Load all analytics
+    async function loadAnalytics() {
+      await Promise.all([
+        loadSummaryStats(),
+        loadCharts(),
+        loadTopEpisodes(),
+        loadGeographicData()
+      ]);
+    }
+
+    // Load summary statistics
+    async function loadSummaryStats() {
+      try {
+        const summary = await api.getAnalyticsSummary(currentPeriod);
+
+        document.getElementById('totalPlays').textContent = formatNumber(summary.total_plays || 0);
+        document.getElementById('uniqueEpisodes').textContent = formatNumber(summary.unique_episodes || 0);
+        document.getElementById('totalListenTime').textContent = formatDuration(summary.total_listen_time || 0);
+        document.getElementById('avgEpisodeLength').textContent = formatDuration(summary.avg_episode_length || 0);
+
+        const playsChange = summary.plays_change || 0;
+        document.getElementById('playsChange').textContent =
+          playsChange >= 0 ? `+${playsChange}% vs previous period` : `${playsChange}% vs previous period`;
+
+        document.getElementById('episodesInfo').textContent = `${summary.new_episodes || 0} new`;
+        document.getElementById('listenTimeInfo').textContent = `${summary.active_listeners || 0} active listeners`;
+        document.getElementById('avgLengthInfo').textContent = `${summary.total_episodes || 0} total episodes`;
+
+        // Engagement score (calculated from various metrics)
+        const engagementScore = Math.min(100, Math.round(
+          (summary.total_plays / 10) +
+          (summary.unique_episodes / 2) +
+          (summary.active_listeners * 5)
+        ));
+        document.getElementById('engagementScore').textContent = engagementScore;
+      } catch (error) {
+        console.error('Failed to load summary stats:', error);
+      }
+    }
+
+    // Load charts
+    async function loadCharts() {
+      try {
+        const dashboardData = await api.getDashboardAnalytics(currentPeriod);
+
+        // Plays over time chart
+        const playsCtx = document.getElementById('playsOverTimeChart').getContext('2d');
+        if (charts.playsOverTime) charts.playsOverTime.destroy();
+
+        charts.playsOverTime = new Chart(playsCtx, {
+          type: 'line',
+          data: {
+            labels: dashboardData.plays_over_time?.labels || [],
+            datasets: [{
+              label: 'Plays',
+              data: dashboardData.plays_over_time?.data || [],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+
+        // Listen time chart
+        const listenCtx = document.getElementById('listenTimeChart').getContext('2d');
+        if (charts.listenTime) charts.listenTime.destroy();
+
+        charts.listenTime = new Chart(listenCtx, {
+          type: 'line',
+          data: {
+            labels: dashboardData.listen_time_trends?.labels || [],
+            datasets: [{
+              label: 'Listen Time (hours)',
+              data: dashboardData.listen_time_trends?.data || [],
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+
+        // Top podcasts chart
+        const topPodcastsCtx = document.getElementById('topPodcastsChart').getContext('2d');
+        if (charts.topPodcasts) charts.topPodcasts.destroy();
+
+        charts.topPodcasts = new Chart(topPodcastsCtx, {
+          type: 'doughnut',
+          data: {
+            labels: dashboardData.top_podcasts?.labels || [],
+            datasets: [{
+              data: dashboardData.top_podcasts?.data || [],
+              backgroundColor: [
+                '#3b82f6',
+                '#10b981',
+                '#f59e0b',
+                '#ef4444',
+                '#8b5cf6',
+                '#ec4899'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+
+        // Episode types chart
+        const typesCtx = document.getElementById('episodeTypesChart').getContext('2d');
+        if (charts.episodeTypes) charts.episodeTypes.destroy();
+
+        charts.episodeTypes = new Chart(typesCtx, {
+          type: 'pie',
+          data: {
+            labels: ['Channel', 'Playlist'],
+            datasets: [{
+              data: dashboardData.episode_types?.data || [0, 0],
+              backgroundColor: ['#3b82f6', '#8b5cf6']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+
+        // Peak hours chart
+        const hoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+        if (charts.peakHours) charts.peakHours.destroy();
+
+        charts.peakHours = new Chart(hoursCtx, {
+          type: 'bar',
+          data: {
+            labels: ['0-6', '6-12', '12-18', '18-24'],
+            datasets: [{
+              label: 'Plays',
+              data: dashboardData.peak_hours?.data || [0, 0, 0, 0],
+              backgroundColor: '#10b981'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { color: '#94a3b8' }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to load charts:', error);
+      }
+    }
+
+    // Load top episodes
+    async function loadTopEpisodes() {
+      const container = document.getElementById('topEpisodesList');
+      try {
+        const result = await api.getPopularEpisodes(10, currentPeriod);
+        const episodes = result.episodes || [];
+
+        if (episodes.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-4">No data available</p>';
+          return;
+        }
+
+        let html = '';
+        episodes.forEach((episode, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+          html += `
+            <div class="flex items-start gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
+              <div class="text-2xl">${medal}</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-white truncate">${sanitizeHTML(episode.episode_name)}</p>
+                <p class="text-sm text-gray-400">
+                  ${formatNumber(episode.play_count)} plays • ${formatDuration(episode.duration)}
+                </p>
+              </div>
+              <button onclick="viewEpisodeAnalytics('${episode.youtube_video_id}')"
+                      class="text-blue-400 hover:text-blue-300">
+                <i class="fas fa-chart-bar"></i>
+              </button>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load top episodes:', error);
+        container.innerHTML = '<p class="text-red-400 text-center">Failed to load data</p>';
+      }
+    }
+
+    // Load geographic data
+    async function loadGeographicData() {
+      const container = document.getElementById('geographicData');
+      try {
+        const result = await api.getGeographicDistribution(currentPeriod);
+        const locations = result.locations || [];
+
+        if (locations.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-4 col-span-full">No geographic data available</p>';
+          return;
+        }
+
+        let html = '';
+        locations.forEach(location => {
+          html += `
+            <div class="p-4 bg-slate-800 rounded-lg text-center">
+              <p class="text-2xl mb-2">${getCountryFlag(location.country_code)}</p>
+              <p class="font-semibold text-white">${location.country}</p>
+              <p class="text-sm text-gray-400">${formatNumber(location.play_count)} plays</p>
+              <p class="text-xs text-gray-500">${location.percentage}%</p>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('Failed to load geographic data:', error);
+        container.innerHTML = '<p class="text-red-400 text-center col-span-full">Failed to load data</p>';
+      }
+    }
+
+    // View episode analytics
+    function viewEpisodeAnalytics(videoId) {
+      window.location.href = `/admin/episodes?episode_id=${videoId}`;
+    }
+
+    // Get country flag emoji
+    function getCountryFlag(countryCode) {
+      if (!countryCode || countryCode.length !== 2) return '🌍';
+      const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt());
+      return String.fromCodePoint(...codePoints);
+    }
+  </script>
+</body>
+</html>
