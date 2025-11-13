@@ -5,9 +5,6 @@ go 1.24.0
 toolchain go1.24.7
 
 require (
-	// AWS SDK for S3 backup functionality
-	github.com/aws/aws-sdk-go v1.55.8
-
 	// Database - SQLite with pure Go implementation
 	github.com/glebarez/sqlite v1.11.0
 	gorm.io/gorm v1.25.12
