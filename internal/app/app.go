@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 
@@ -10,6 +11,8 @@ import (
 )
 
 func Start() {
+
+	config.Load()
 	youtube.SetupYoutubeService()
 	ytdlp.MustInstall(context.TODO(), nil)
 

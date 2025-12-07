@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -45,7 +45,7 @@ var validate = validator.New()
 
 var AppConfig *Config
 
-func init() {
+func Load() (*Config, error) {
 	_ = gotenv.Load()
 	configDir := os.Getenv("CONFIG_DIR")
 	if configDir == "" {
@@ -87,11 +87,11 @@ func init() {
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		log.Fatalf("unmarshal config: %w", err)
+		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
 	if err := validate.Struct(&cfg); err != nil {
-		log.Fatalf("invalid config: %w", err)
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
 	AppConfig = &cfg
@@ -100,4 +100,6 @@ func init() {
 	}
 	AppConfig.Setup.DbFile = path.Join(AppConfig.Setup.ConfigDir, "sqlite.db")
 	AppConfig.Setup.AudioDir = audioDir
+
+	return &cfg, nil
 }

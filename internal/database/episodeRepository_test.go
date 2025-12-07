@@ -14,6 +14,10 @@ func setupTestDB(t *testing.T) string {
 	t.Helper()
 	tmpDir := t.TempDir()
 
+	if config.AppConfig == nil {
+		config.AppConfig = &config.Config{}
+	}
+
 	config.AppConfig.Setup.ConfigDir = tmpDir
 	config.AppConfig.Setup.DbFile = path.Join(tmpDir, "test.db")
 	config.AppConfig.Setup.AudioDir = path.Join(tmpDir, "audio")
