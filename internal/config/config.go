@@ -53,7 +53,7 @@ func Load() (*Config, error) {
 	}
 
 	var audioDir string
-	if _, err := os.Stat("/downloads"); err == nil {
+	if err := os.MkdirAll("/downloads", 0755); err == nil {
 		audioDir = "/downloads"
 	} else {
 		audioDir = path.Join(configDir, "audio")
