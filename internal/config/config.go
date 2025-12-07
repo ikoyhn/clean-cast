@@ -67,6 +67,7 @@ func Load() (*Config, error) {
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
 	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
+	v.SetDefault("setup.google-api-key", os.Getenv("GOOGLE_API_KEY"))
 
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	v.SetEnvKeyReplacer(replacer)
