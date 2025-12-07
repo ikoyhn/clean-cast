@@ -52,6 +52,13 @@ func Load() (*Config, error) {
 		configDir = "/config"
 	}
 
+	propertiesFile := path.Join(configDir, "properties.yml")
+	if _, err := os.Stat(propertiesFile); os.IsNotExist(err) {
+		if err := os.WriteFile(propertiesFile, []byte{}, 0644); err != nil {
+			return nil, fmt.Errorf("create properties.yml: %w", err)
+		}
+	}
+
 	v := viper.New()
 	v.SetConfigName("properties")
 	v.SetConfigType("yaml")
