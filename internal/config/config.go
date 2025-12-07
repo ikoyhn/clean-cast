@@ -53,7 +53,12 @@ func Load() (*Config, error) {
 	}
 	audioDir := os.Getenv("AUDIO_DIR")
 	if audioDir == "" {
-		audioDir = path.Join(configDir, "audio")
+		// Check if /audio is mounted as a separate volume, otherwise default to config/audio
+		if _, err := os.Stat("/audio"); err == nil {
+			audioDir = "/audio"
+		} else {
+			audioDir = path.Join(configDir, "audio")
+		}
 	}
 
 	v := viper.New()

@@ -15,4 +15,8 @@ COPY --from=builder /app/cmd/app/main .
 RUN apk add --no-cache ffmpeg
 
 ENV PORT=8080
+
+# Define volume mount points
+VOLUME ["/config"]
+
 CMD ["./main"]
