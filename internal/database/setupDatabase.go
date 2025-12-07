@@ -14,13 +14,12 @@ var db *gorm.DB
 
 func SetupDatabase() {
 	var err error
-	// Create the database file if it doesn't exist
-	if _, err := os.Stat(config.Config.DbFile); os.IsNotExist(err) {
-		err := os.MkdirAll(config.Config.ConfigDir, os.ModePerm)
+	if _, err := os.Stat(config.AppConfig.Setup.DbFile); os.IsNotExist(err) {
+		err := os.MkdirAll(config.AppConfig.Setup.ConfigDir, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
-		f, err := os.Create(config.Config.DbFile)
+		f, err := os.Create(config.AppConfig.Setup.DbFile)
 		if err != nil {
 			panic(err)
 		}
@@ -30,7 +29,7 @@ func SetupDatabase() {
 		}
 	}
 
-	db, err = gorm.Open(sqlite.Open(config.Config.DbFile), &gorm.Config{
+	db, err = gorm.Open(sqlite.Open(config.AppConfig.Setup.DbFile), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

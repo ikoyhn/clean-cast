@@ -14,11 +14,11 @@ func setupTestDB(t *testing.T) string {
 	t.Helper()
 	tmpDir := t.TempDir()
 
-	config.Config.ConfigDir = tmpDir
-	config.Config.DbFile = path.Join(tmpDir, "test.db")
-	config.Config.AudioDir = path.Join(tmpDir, "audio")
+	config.AppConfig.Setup.ConfigDir = tmpDir
+	config.AppConfig.Setup.DbFile = path.Join(tmpDir, "test.db")
+	config.AppConfig.Setup.AudioDir = path.Join(tmpDir, "audio")
 
-	if err := os.MkdirAll(config.Config.AudioDir, 0755); err != nil {
+	if err := os.MkdirAll(config.AppConfig.Setup.AudioDir, 0755); err != nil {
 		t.Fatalf("failed to create audio dir: %v", err)
 	}
 
@@ -31,7 +31,7 @@ func TestDeletePodcastCronJob_RemovesExistingFileAndRecord(t *testing.T) {
 	tmp := setupTestDB(t)
 
 	videoId := "video1"
-	filePath := path.Join(config.Config.AudioDir, videoId+".m4a")
+	filePath := path.Join(config.AppConfig.Setup.AudioDir, videoId+".m4a")
 	if err := os.WriteFile(filePath, []byte("data"), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}

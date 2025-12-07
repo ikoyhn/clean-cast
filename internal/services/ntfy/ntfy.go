@@ -8,10 +8,10 @@ import (
 )
 
 func SendNotification(message, title string) error {
-	if config.Ntfy.Server == "" || config.Ntfy.Topic == "" {
+	if config.AppConfig.Ntfy.Server == "" || config.AppConfig.Ntfy.Topic == "" {
 		return nil
 	}
-	url := fmt.Sprintf("%s/%s", config.Ntfy.Server, config.Ntfy.Topic)
+	url := fmt.Sprintf("%s/%s", config.AppConfig.Ntfy.Server, config.AppConfig.Ntfy.Topic)
 	req, err := http.NewRequest("POST", url, bytes.NewBufferString(message))
 	if err != nil {
 		return err

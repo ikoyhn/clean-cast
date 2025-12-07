@@ -4,9 +4,9 @@
 # OPTIONAL: "cron" - can be set manually, this is used to clean up old audio files that have not been accessed in one week (default)
 ###
 setup:
-    google-api-key: ""
-    audio-dir: ""
-    cron: ""
+    google-api-key:
+    audio-dir:
+    cron:
 
 
 ### NTFY notifications, this requires a NTFY notifications server. Will allow you to receive notifications on episode download such as estimated download duration.
@@ -15,8 +15,8 @@ setup:
 # OPTIONAL: "topic" - is where the notifications get published to, ensure your clients are subscribed to this topic to receive the notifications
 ###
 ntfy:
-    server: ""
-    topic: ""
+    server:
+    topic:
 
 ### Optional Security Settings
 # OPTIONAL: "token" - Used for securing the endpoints. If using this you must add the query param `token` to the end of the URL for the `/rss` and `/channel` endpoint request ex.`?token=mySecureToken`
@@ -24,10 +24,10 @@ ntfy:
 # OPTIONAL: "password" - If you want to secure your app behind basic authentication set this field and the username field
 ###
 authentication:
-    token: ""
+    token:
     basic-auth:
-        username: ""
-        password: ""
+        username:
+        password:
 
 ### YTDLP Settings
 # OPTIONAL: "cookies-file" - Set this if you want to use custom cookies for YT-DLP, store your cookies file in /config directory
@@ -36,7 +36,7 @@ authentication:
 # OPTIONAL: "extractor-args" - Custom YTDLP extractor args
 ###
 ytdlp:
-    cookies-file: ""
-    sponsorblock-categories: ""
-    episode-duration-minimum: "10m"
-    extractor-args: ""
+    cookies-file:
+    sponsorblock-categories:
+    episode-duration-minimum:
+    extractor-args:

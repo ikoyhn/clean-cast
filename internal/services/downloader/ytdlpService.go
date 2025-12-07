@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
+	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services/ntfy"
 	"os"
 	"path"
@@ -20,27 +21,32 @@ var youtubeVideoMutexes = &sync.Map{}
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="
 
-func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
-	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
+func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
+	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoIdFile)
 	if !ok {
 		mutex = &sync.Mutex{}
-		youtubeVideoMutexes.Store(youtubeVideoId, mutex)
+		youtubeVideoMutexes.Store(youtubeVideoIdFile, mutex)
 	}
 
 	mutex.(*sync.Mutex).Lock()
 
-	// Check if the file is already being processed
-	filePath := config.Config.AudioDir + youtubeVideoId + ".m4a"
+	filePath := config.AppConfig.Setup.AudioDir + youtubeVideoIdFile
 	if _, err := os.Stat(filePath); err == nil {
 		mutex.(*sync.Mutex).Unlock()
-		return youtubeVideoId, make(chan struct{})
+		return youtubeVideoIdFile, make(chan struct{})
 	}
 
-	// If not, proceed with the download
-	youtubeVideoId = strings.TrimSuffix(youtubeVideoId, ".m4a")
-	ytdlp.Install(context.TODO(), nil)
+	youtubeVideoId := strings.TrimSuffix(youtubeVideoIdFile, ".m4a")
+	title := youtubeVideoId
+	episode, err := database.GetEpisodeByVideoId(youtubeVideoId)
+	if err != nil {
+		log.Warnf("Error fetching YouTube video title: %v", err)
+	}
+	if episode != nil && episode.EpisodeName != "" {
+		title = episode.EpisodeName
+	}
 
-	categories := config.Config.SponsorBlockCategories
+	categories := config.AppConfig.Ytdlp.SponsorBlockCategories
 	if categories == "" {
 		categories = "sponsor"
 	}
@@ -49,23 +55,24 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	var etaNotified uint32 = 0
 	dl := ytdlp.New().
 		NoProgress().
+		// prefer m4a audio with original format note, but accept other extensions as a fallback
 		FormatSort("ext::m4a[format_note*=original]").
 		SponsorblockRemove(categories).
 		ExtractAudio().
 		NoPlaylist().
 		FFmpegLocation("/usr/bin/ffmpeg").
 		Continue().
-		Paths(config.Config.AudioDir).
+		Paths(config.AppConfig.Setup.AudioDir).
 		ProgressFunc(4000*time.Millisecond, func(prog ytdlp.ProgressUpdate) {
-			ytdlpProgress(&etaNotified, prog, youtubeVideoId)
+			ytdlpProgress(&etaNotified, prog, title)
 		}).
 		Output(youtubeVideoId + ".%(ext)s")
 
-	if config.Config.CookiesFile != "" {
-		dl.Cookies(config.Config.CookiesFile)
+	if config.AppConfig.Ytdlp.CookiesFile != "" {
+		dl.Cookies(config.AppConfig.Ytdlp.CookiesFile)
 	}
-	if config.Config.YtdlpExtractorArgs != "" {
-		dl.ExtractorArgs(config.Config.YtdlpExtractorArgs)
+	if config.AppConfig.Ytdlp.YtdlpExtractorArgs != "" {
+		dl.ExtractorArgs(config.AppConfig.Ytdlp.YtdlpExtractorArgs)
 	}
 
 	done := make(chan struct{})
@@ -73,7 +80,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		r, dlErr := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
 
 		if r.ExitCode != 0 {
-			file, err := os.Open(path.Join(config.Config.AudioDir, youtubeVideoId+".m4a"))
+			file, err := os.Open(path.Join(config.AppConfig.Setup.AudioDir, youtubeVideoId+".m4a"))
 			if file != nil || err == nil {
 				ntfy.SendNotification("Download completed!", "Clean Cast - Success")
 				log.Warn("Download exited with non-zero code, but file exists: ", filePath)
@@ -84,8 +91,8 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 				}
 			}
 		} else {
-			log.Infof("%s Download completed successfully.", youtubeVideoId)
-			ntfy.SendNotification("Download completed!", "Clean Cast - Success")
+			log.Infof("%s download completed successfully.", title)
+			ntfy.SendNotification(fmt.Sprintf("%s download success!", title), "Clean Cast - Success")
 
 		}
 		mutex.(*sync.Mutex).Unlock()
@@ -96,20 +103,19 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	return youtubeVideoId, done
 }
 
-func ytdlpProgress(etaNotified *uint32, prog ytdlp.ProgressUpdate, youtubeVideoId string) {
+func ytdlpProgress(etaNotified *uint32, prog ytdlp.ProgressUpdate, title string) {
 	fmt.Printf(
-		"%s @ %s [eta: %s] :: %s\n",
+		"%s @ %s [eta: %s]\n",
 		prog.Status,
 		prog.PercentString(),
 		prog.ETA(),
-		prog.Filename,
 	)
 
 	if atomic.LoadUint32(etaNotified) == 0 {
 		eta := prog.ETA()
 		if eta > time.Duration(0) {
 			if atomic.CompareAndSwapUint32(etaNotified, 0, 1) {
-				msg := fmt.Sprintf("Downloading %s — %s @ %s (eta: %s)", youtubeVideoId, prog.Status, prog.PercentString(), eta)
+				msg := fmt.Sprintf("%s — %s @ %s (eta: %s)", title, prog.Status, prog.PercentString(), eta)
 				ntfy.SendNotification(msg, "Clean Cast")
 			}
 		}

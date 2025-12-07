@@ -24,7 +24,7 @@ func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 	}
 
 	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
-		os.Remove(config.Config.AudioDir + youtubeVideoId + ".m4a")
+		os.Remove(config.AppConfig.Setup.AudioDir + youtubeVideoId + ".m4a")
 		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}
@@ -101,10 +101,10 @@ func calculateSkippedTime(segments []SponsorBlockResponse) float64 {
 }
 
 func getCategories() []string {
-	if config.Config.SponsorBlockCategories == "" {
+	if config.AppConfig.Ytdlp.SponsorBlockCategories == "" {
 		return nil
 	}
-	return strings.Split(config.Config.SponsorBlockCategories, ",")
+	return strings.Split(config.AppConfig.Ytdlp.SponsorBlockCategories, ",")
 }
 
 type SponsorBlockResponse struct {

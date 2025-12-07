@@ -85,7 +85,7 @@ func GetPodcastEpisodesByPodcastId(podcastId string, podcastType enum.PodcastTyp
 			return nil, err
 		}
 	} else if podcastType == enum.CHANNEL {
-		dur, err := time.ParseDuration(config.Config.MinDuration)
+		dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func DeletePodcastCronJob() {
 	db.Where("last_access_date < ?", oneWeekAgo).Find(&histories)
 
 	for _, history := range histories {
-		filePath := path.Join(config.Config.AudioDir, history.YoutubeVideoId+".m4a")
+		filePath := path.Join(config.AppConfig.Setup.AudioDir, history.YoutubeVideoId+".m4a")
 		err := os.Remove(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -126,4 +126,13 @@ func DeletePodcastCronJob() {
 
 		log.Info("[DB] Deleted old episode playback history... " + history.YoutubeVideoId)
 	}
+}
+
+func GetEpisodeByVideoId(videoId string) (*models.PodcastEpisode, error) {
+	var episode models.PodcastEpisode
+	err := db.Where("youtube_video_id = ?", videoId).First(&episode).Error
+	if err != nil {
+		return nil, err
+	}
+	return &episode, nil
 }

@@ -59,13 +59,13 @@ func registerRoutes(e *echo.Echo) {
 			c.Error(echo.ErrNotFound)
 		}
 
-		file, err := os.Open(path.Join(config.Config.AudioDir, fileName))
+		file, err := os.Open(path.Join(config.AppConfig.Setup.AudioDir, fileName))
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 			fileName, done := downloader.GetYoutubeVideo(fileName)
 			<-done
-			file, err = os.Open(path.Join(config.Config.AudioDir, fileName+".m4a"))
+			file, err = os.Open(path.Join(config.AppConfig.Setup.AudioDir, fileName+".m4a"))
 			if err != nil || file == nil {
 				return err
 			}
@@ -73,7 +73,7 @@ func registerRoutes(e *echo.Echo) {
 
 			rangeHeader := c.Request().Header.Get("Range")
 			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.Config.AudioDir, fileName+".m4a"))
+				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName+".m4a"))
 				return nil
 			}
 			return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -82,7 +82,7 @@ func registerRoutes(e *echo.Echo) {
 		database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
 		rangeHeader := c.Request().Header.Get("Range")
 		if rangeHeader != "" {
-			http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.Config.AudioDir, fileName))
+			http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName))
 			return nil
 		}
 		return c.Stream(http.StatusOK, "audio/mp4", file)
@@ -131,8 +131,8 @@ func validateQueryParams(c echo.Context) *models.RssRequestParams {
 
 func setupCron() {
 	cronSchedule := "0 0 * * 0"
-	if config.Config.Cron != "" {
-		cronSchedule = config.Config.Cron
+	if config.AppConfig.Setup.Cron != "" {
+		cronSchedule = config.AppConfig.Setup.Cron
 	}
 	c := cron.New()
 	c.AddFunc(cronSchedule, func() {
@@ -174,8 +174,8 @@ func handler(r *http.Request) string {
 }
 
 func checkAuthentication(c echo.Context) error {
-	tokenConfigured := config.Authentication.Token != ""
-	basicConfigured := config.Authentication.BasicAuth.Password != ""
+	tokenConfigured := config.AppConfig.Authentication.Token != ""
+	basicConfigured := config.AppConfig.Authentication.BasicAuth.Password != ""
 
 	// If no authentication configured, allow through
 	if !tokenConfigured && !basicConfigured {
@@ -187,12 +187,12 @@ func checkAuthentication(c echo.Context) error {
 		user, pass, ok := c.Request().BasicAuth()
 		token := c.Request().URL.Query().Get("token")
 
-		basicOk := ok && pass == config.Authentication.BasicAuth.Password
-		if config.Authentication.BasicAuth.Username != "" {
-			basicOk = basicOk && user == config.Authentication.BasicAuth.Username
+		basicOk := ok && pass == config.AppConfig.Authentication.BasicAuth.Password
+		if config.AppConfig.Authentication.BasicAuth.Username != "" {
+			basicOk = basicOk && user == config.AppConfig.Authentication.BasicAuth.Username
 		}
 
-		tokenOk := token == config.Authentication.Token
+		tokenOk := token == config.AppConfig.Authentication.Token
 
 		if basicOk || tokenOk {
 			return nil
@@ -203,7 +203,7 @@ func checkAuthentication(c echo.Context) error {
 
 	if basicConfigured {
 		_, pass, ok := c.Request().BasicAuth()
-		if ok && pass == config.Authentication.BasicAuth.Password {
+		if ok && pass == config.AppConfig.Authentication.BasicAuth.Password {
 			return nil
 		}
 		return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
@@ -211,7 +211,7 @@ func checkAuthentication(c echo.Context) error {
 
 	if tokenConfigured {
 		token := c.Request().URL.Query().Get("token")
-		if token == config.Authentication.Token {
+		if token == config.AppConfig.Authentication.Token {
 			return nil
 		}
 		return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")

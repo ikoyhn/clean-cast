@@ -41,8 +41,8 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			}
 			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
 
-			if config.Authentication.Token != "" {
-				mediaUrl = mediaUrl + "?token=" + config.Authentication.Token
+			if config.AppConfig.Authentication.Token != "" {
+				mediaUrl = mediaUrl + "?token=" + config.AppConfig.Authentication.Token
 			}
 			enclosure := generator.Enclosure{
 				URL:    mediaUrl,
@@ -76,11 +76,10 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 
 func BuildChannelRssFeed(channelId string, params *models.RssRequestParams, host string) []byte {
 	log.Info("[RSS FEED] Building rss feed for channel...")
-	service := youtube.SetupYoutubeService()
 
-	podcast := youtube.GetChannelData(channelId, service, false)
+	podcast := youtube.GetChannelData(channelId, false)
 
-	channel.GetChannelMetadataAndVideos(podcast.Id, service, params)
+	channel.GetChannelMetadataAndVideos(podcast.Id, params)
 	episodes, err := database.GetPodcastEpisodesByPodcastId(podcast.Id, enum.CHANNEL)
 	if err != nil {
 		log.Error(err)

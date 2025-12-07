@@ -29,13 +29,13 @@ func GetEpisodePlaybackHistory(youtubeVideoId string) *models.EpisodePlaybackHis
 
 func TrackEpisodeFiles() {
 	log.Info("App started, tracking existing episode files...")
-	if _, err := os.Stat(config.Config.AudioDir); os.IsNotExist(err) {
-		os.MkdirAll(config.Config.AudioDir, 0755)
+	if _, err := os.Stat(config.AppConfig.Setup.AudioDir); os.IsNotExist(err) {
+		os.MkdirAll(config.AppConfig.Setup.AudioDir, 0755)
 	}
-	if _, err := os.Stat(config.Config.ConfigDir); os.IsNotExist(err) {
-		os.MkdirAll(config.Config.ConfigDir, 0755)
+	if _, err := os.Stat(config.AppConfig.Setup.ConfigDir); os.IsNotExist(err) {
+		os.MkdirAll(config.AppConfig.Setup.ConfigDir, 0755)
 	}
-	files, err := os.ReadDir(config.Config.AudioDir)
+	files, err := os.ReadDir(config.AppConfig.Setup.AudioDir)
 	if err != nil {
 		log.Error(err)
 	}
