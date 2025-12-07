@@ -67,6 +67,16 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 				Enclosure: &enclosure,
 				PubDate:   &podcastEpisode.PublishedDate,
 			}
+
+			// Add image if available
+			if podcastEpisode.ImageUrl != "" {
+				podcastItem.IImage = struct {
+					Href string `xml:"href,attr"`
+				}{
+					Href: podcastEpisode.ImageUrl,
+				}
+			}
+
 			ytPodcast.AddItem(podcastItem)
 		}
 	}

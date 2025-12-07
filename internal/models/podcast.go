@@ -15,12 +15,13 @@ type PodcastEpisode struct {
 	PublishedDate      time.Time     `json:"published_date"`
 	Type               string        `json:"type" gorm:"index:youtubevideoid_type_channelid_type"`
 	PodcastId          string        `json:"podcast_id" gorm:"foreignkey:PodcastId;association_foreignkey:Id"`
+	ImageUrl           string        `json:"image_url"`
 	Duration           time.Duration `json:"duration"`
 }
 
 type Podcast struct {
-	Id              string           `json:"id" gorm:"primary_key"`
 	AppleId         string           `json:"apple_id"`
+	Id              string           `json:"id" gorm:"primary_key"`
 	PodcastName     string           `json:"podcast_name"`
 	Description     string           `json:"description"`
 	Category        string           `json:"category"`
@@ -44,6 +45,18 @@ func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEp
 	if err != nil {
 		log.Error(err)
 	}
+
+	imageUrl := ""
+	if youtubeVideo.Snippet.Thumbnails.Maxres != nil {
+		imageUrl = youtubeVideo.Snippet.Thumbnails.Maxres.Url
+	} else if youtubeVideo.Snippet.Thumbnails.Standard != nil {
+		imageUrl = youtubeVideo.Snippet.Thumbnails.Standard.Url
+	} else if youtubeVideo.Snippet.Thumbnails.High != nil {
+		imageUrl = youtubeVideo.Snippet.Thumbnails.High.Url
+	} else if youtubeVideo.Snippet.Thumbnails.Default != nil {
+		imageUrl = youtubeVideo.Snippet.Thumbnails.Default.Url
+	}
+
 	return PodcastEpisode{
 		YoutubeVideoId:     youtubeVideo.Snippet.ResourceId.VideoId,
 		EpisodeName:        youtubeVideo.Snippet.Title,
@@ -51,6 +64,7 @@ func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEp
 		PublishedDate:      publishedAt,
 		Type:               "PLAYLIST",
 		PodcastId:          youtubeVideo.Snippet.PlaylistId,
+		ImageUrl:           imageUrl,
 	}
 }
 
