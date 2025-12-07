@@ -57,12 +57,17 @@ func Load() (*Config, error) {
 	v.SetConfigType("yaml")
 	v.AddConfigPath(configDir)
 
+	propertiesFile := path.Join(configDir, "properties.yml")
+	fileInfo, err := os.Stat(propertiesFile)
+	if err == nil && fileInfo.Size() > 0 {
+		v.ReadInConfig()
+	}
+
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
 	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
-
-	v.ReadInConfig()
+	v.SetDefault("setup.google-api-key", os.Getenv("GOOGLE_API_KEY"))
 
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	v.SetEnvKeyReplacer(replacer)
