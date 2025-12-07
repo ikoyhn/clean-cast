@@ -169,6 +169,7 @@ Shortcut created by [Noah Kiss](https://github.com/noahkiss) can be found [here]
     - [x] Add user defined max videos to grab (by date)
     - [ ] Allow for multiple YT API keys 
 - [x] Implement proper authenticaton (Username/Password)
+- [x] Implement Ntfy Notifications
 - [ ] Create IOS App (stretch goal)
 - [ ] Create Android App (stretch goal)
 

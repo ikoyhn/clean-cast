@@ -1,13 +1,10 @@
 ## Main settings for application
 # REQUIRED: "google-api-key"  - can either be set in here or in docker run command, view here to get an API key (https://developers.google.com/youtube/v3/getting-started)
-# OPTIONAL: "audio-dir" - can be used if you would like to store the .m4a audio files to a custom location
 # OPTIONAL: "cron" - can be set manually, this is used to clean up old audio files that have not been accessed in one week (default)
 ###
 setup:
     google-api-key:
-    audio-dir:
     cron:
-
 
 ### NTFY notifications, this requires a NTFY notifications server. Will allow you to receive notifications on episode download such as estimated download duration.
 ### NTFY docs can be found here (https://docs.ntfy.sh/)

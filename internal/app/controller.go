@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,9 @@ func registerRoutes(e *echo.Echo) {
 		}
 
 		fileName := c.Param("youtubeVideoId")
+		if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") || strings.Contains(fileName, "..") {
+			return echo.NewHTTPError(http.StatusBadRequest, "Invalid file name")
+		}
 		if !common.IsValidParam(fileName) {
 			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
 		}
@@ -59,7 +63,16 @@ func registerRoutes(e *echo.Echo) {
 			c.Error(echo.ErrNotFound)
 		}
 
-		file, err := os.Open(path.Join(config.AppConfig.Setup.AudioDir, fileName))
+		audioDirAbs, err := filepath.Abs(config.AppConfig.Setup.AudioDir)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Server config error")
+		}
+		requestedFileAbs, err := filepath.Abs(filepath.Join(config.AppConfig.Setup.AudioDir, fileName))
+		if err != nil || !strings.HasPrefix(requestedFileAbs, audioDirAbs+string(os.PathSeparator)) && requestedFileAbs != audioDirAbs {
+			return echo.ErrNotFound
+		}
+
+		file, err := os.Open(requestedFileAbs)
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
 		if file == nil || err != nil || needRedownload {
 			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)

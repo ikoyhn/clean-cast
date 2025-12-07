@@ -5,7 +5,7 @@ https://hub.docker.com/r/ikoyhn/clean-cast
 
 Docker run command (only required parameters)
 ```
-docker run -p 8080:8080 -e GOOGLE_API_KEY=<api key here> -v /<audio download path here>:/config ikoyhn/clean-cast
+docker run -p 8080:8080 -e GOOGLE_API_KEY=<api-key-here> -v /<config-path-here>:/config ikoyhn/clean-cast
 ```
 
 ## Docker Compose Templates
@@ -20,13 +20,14 @@ image: ikoyhn/go-podcast-sponsor-block
 ports:
 - "8080:8080"
 environment:
-- GOOGLE_API_KEY=<api key here>
+- GOOGLE_API_KEY=<api-key-here>
 volumes:
-- /<audio download path here>:/config
+- /<config-path-here>:/config
 ```
 
 ## Docker Variables
 |Variable| Description | Required |
 |--|--|--|
-| `-v <container path>:/config` | Where the audio files and config files will be stored | Yes |
-| `-e GOOGLE_API_KEY=<api key>` | YouTube v3 API Key. Get your own api key [here](https://developers.google.com/youtube/v3/getting-started)| YES (must be set either here or in properties.yml) |
+| `-v <container path>:/config` | Where config files will be stored | Yes |
+| `-v <container path>:/audio` | Where the audio files will be stored. By default the files will be stored in the /config folder unless this is set | NO |
+| `-e GOOGLE_API_KEY=<api-key>` | YouTube v3 API Key. Get your own api key [here](https://developers.google.com/youtube/v3/getting-started)| YES (must be set either here or in properties.yml) |

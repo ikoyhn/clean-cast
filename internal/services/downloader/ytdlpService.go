@@ -47,9 +47,6 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 	}
 
 	categories := config.AppConfig.Ytdlp.SponsorBlockCategories
-	if categories == "" {
-		categories = "sponsor"
-	}
 	categories = strings.TrimSpace(categories)
 
 	var etaNotified uint32 = 0

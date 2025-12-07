@@ -14,7 +14,7 @@ import (
 type Config struct {
 	Setup struct {
 		GoogleApiKey string `mapstructure:"google-api-key" validate:"required"`
-		AudioDir     string `mapstructure:"audio-dir"`
+		AudioDir     string
 		Cron         string `mapstructure:"cron"`
 		ConfigDir    string `mapstructure:"config-dir" validate:"required"`
 		DbFile       string
@@ -51,6 +51,10 @@ func Load() (*Config, error) {
 	if configDir == "" {
 		configDir = "/config"
 	}
+	audioDir := os.Getenv("AUDIO_DIR")
+	if audioDir == "" {
+		audioDir = path.Join(configDir, "audio")
+	}
 
 	v := viper.New()
 	v.SetConfigName("properties")
@@ -60,6 +64,7 @@ func Load() (*Config, error) {
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
+	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
 
 	v.ReadInConfig()
 
@@ -68,7 +73,8 @@ func Load() (*Config, error) {
 	viper.SetEnvPrefix("env")
 	v.AutomaticEnv()
 
-	v.BindEnv("setup.configDir", "CONFIG_DIR")
+	v.BindEnv("setup.config-dir", "CONFIG_DIR")
+	v.BindEnv("setup.audio-dir", "AUDIO_DIR")
 	v.BindEnv("setup.google-api-key", "GOOGLE_API_KEY")
 	v.BindEnv("ytdlp.cookies-file", "COOKIES_FILE")
 	v.BindEnv("ntfy.server", "NTFY_SERVER")
@@ -89,11 +95,11 @@ func Load() (*Config, error) {
 	}
 
 	AppConfig = &cfg
-	AppConfig.Setup.AudioDir = path.Join(AppConfig.Setup.ConfigDir, AppConfig.Setup.AudioDir)
 	if AppConfig.Ytdlp.CookiesFile != "" {
 		AppConfig.Ytdlp.CookiesFile = path.Join(AppConfig.Setup.ConfigDir, AppConfig.Ytdlp.CookiesFile)
 	}
 	AppConfig.Setup.DbFile = path.Join(AppConfig.Setup.ConfigDir, "sqlite.db")
+	AppConfig.Setup.AudioDir = audioDir
 
 	return &cfg, nil
 }
