@@ -51,14 +51,12 @@ func Load() (*Config, error) {
 	if configDir == "" {
 		configDir = "/config"
 	}
-	audioDir := os.Getenv("AUDIO_DIR")
-	if audioDir == "" {
-		// Check if /audio is mounted as a separate volume, otherwise default to config/audio
-		if _, err := os.Stat("/audio"); err == nil {
-			audioDir = "/audio"
-		} else {
-			audioDir = path.Join(configDir, "audio")
-		}
+
+	var audioDir string
+	if _, err := os.Stat("/downloads"); err == nil {
+		audioDir = "/downloads"
+	} else {
+		audioDir = path.Join(configDir, "audio")
 	}
 
 	v := viper.New()
@@ -68,7 +66,6 @@ func Load() (*Config, error) {
 
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
-	v.SetDefault("setup.audio-dir", "audio")
 	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
 
 	v.ReadInConfig()

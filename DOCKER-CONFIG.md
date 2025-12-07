@@ -29,7 +29,7 @@ volumes:
 |Variable| Description | Required |
 |--|--|--|
 | `-v <host-path>:/config` | Where config files will be stored (includes properties.yml and sqlite.db) | Yes |
-| `-v <host-path>:/audio` | Where the audio files will be stored on a separate volume/drive. If not set, audio will default to `/config/audio` | No |
+| `-v <host-path>:/downloads` | Where the audio files will be stored on a separate volume/drive. If not set, audio will default to `/config/audio` | No |
 | `-e GOOGLE_API_KEY=<api-key>` | YouTube v3 API Key. Get your own api key [here](https://developers.google.com/youtube/v3/getting-started)| YES (must be set either here or in properties.yml) |
 
 ## Audio Storage Examples
@@ -42,7 +42,7 @@ Audio files will be stored in: `/path/to/config/audio`
 
 **Option 2: Audio stored in separate volume/drive**
 ```bash
-docker run -p 8080:8080 -e GOOGLE_API_KEY=<api-key-here> -v /path/to/config:/config -v /path/to/audio:/audio ikoyhn/clean-cast
+docker run -p 8080:8080 -e GOOGLE_API_KEY=<api-key-here> -v /path/to/config:/config -v /path/to/downloads:/downloads ikoyhn/clean-cast
 ```
-Audio files will be stored in: `/path/to/audio`
+Audio files will be stored in: `/path/to/downlaods`
 
