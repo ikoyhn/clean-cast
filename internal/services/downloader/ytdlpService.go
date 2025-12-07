@@ -52,7 +52,6 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 	var etaNotified uint32 = 0
 	dl := ytdlp.New().
 		NoProgress().
-		// prefer m4a audio with original format note, but accept other extensions as a fallback
 		FormatSort("ext::m4a[format_note*=original]").
 		SponsorblockRemove(categories).
 		ExtractAudio().
@@ -102,10 +101,11 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 
 func ytdlpProgress(etaNotified *uint32, prog ytdlp.ProgressUpdate, title string) {
 	fmt.Printf(
-		"%s @ %s [eta: %s]\n",
+		"%s @ %s [eta: %s] :: %s\n",
 		prog.Status,
 		prog.PercentString(),
 		prog.ETA(),
+		prog.Filename,
 	)
 
 	if atomic.LoadUint32(etaNotified) == 0 {

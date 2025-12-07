@@ -51,10 +51,6 @@ func Load() (*Config, error) {
 	if configDir == "" {
 		configDir = "/config"
 	}
-	audioDir := os.Getenv("AUDIO_DIR")
-	if audioDir == "" {
-		audioDir = path.Join(configDir, "audio")
-	}
 
 	v := viper.New()
 	v.SetConfigName("properties")
@@ -99,7 +95,7 @@ func Load() (*Config, error) {
 		AppConfig.Ytdlp.CookiesFile = path.Join(AppConfig.Setup.ConfigDir, AppConfig.Ytdlp.CookiesFile)
 	}
 	AppConfig.Setup.DbFile = path.Join(AppConfig.Setup.ConfigDir, "sqlite.db")
-	AppConfig.Setup.AudioDir = audioDir
+	AppConfig.Setup.AudioDir = path.Join(AppConfig.Setup.ConfigDir, "audio")
 
 	return &cfg, nil
 }

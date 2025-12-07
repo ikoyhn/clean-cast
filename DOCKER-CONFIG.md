@@ -29,5 +29,4 @@ volumes:
 |Variable| Description | Required |
 |--|--|--|
 | `-v <container path>:/config` | Where config files will be stored | Yes |
-| `-v <container path>:/audio` | Where the audio files will be stored. By default the files will be stored in the /config folder unless this is set | NO |
 | `-e GOOGLE_API_KEY=<api-key>` | YouTube v3 API Key. Get your own api key [here](https://developers.google.com/youtube/v3/getting-started)| YES (must be set either here or in properties.yml) |
