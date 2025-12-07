@@ -16,10 +16,10 @@ import (
 	ytApi "google.golang.org/api/youtube/v3"
 )
 
-func GetChannelMetadataAndVideos(channelId string, service *ytApi.Service, params *models.RssRequestParams) {
+func GetChannelMetadataAndVideos(channelId string, params *models.RssRequestParams) {
 	log.Info("[RSS FEED] Getting channel data...")
 
-	if !youtube.FindChannel(channelId, service) {
+	if !youtube.FindChannel(channelId) {
 		return
 	}
 	oldestSavedEpisode, err := database.GetOldestEpisode(channelId)
@@ -32,25 +32,25 @@ func GetChannelMetadataAndVideos(channelId string, service *ytApi.Service, param
 		}
 		if oldestSavedEpisode != nil {
 			if latestSavedEpisode.PublishedDate.After(*params.Date) {
-				getChannelVideosByDateRange(service, channelId, time.Now(), *params.Date)
+				getChannelVideosByDateRange(channelId, time.Now(), *params.Date)
 			} else if oldestSavedEpisode.PublishedDate.After(*params.Date) {
-				getChannelVideosByDateRange(service, channelId, oldestSavedEpisode.PublishedDate, *params.Date)
-				getChannelVideosByDateRange(service, channelId, time.Now(), latestSavedEpisode.PublishedDate)
+				getChannelVideosByDateRange(channelId, oldestSavedEpisode.PublishedDate, *params.Date)
+				getChannelVideosByDateRange(channelId, time.Now(), latestSavedEpisode.PublishedDate)
 			}
 		} else {
-			getChannelVideosByDateRange(service, channelId, time.Now(), *params.Date)
+			getChannelVideosByDateRange(channelId, time.Now(), *params.Date)
 		}
 	case enum.DEFAULT:
 		if (oldestSavedEpisode != nil) && (latestSavedEpisode != nil) {
-			getChannelVideosByDateRange(service, channelId, time.Now(), latestSavedEpisode.PublishedDate)
-			getChannelVideosByDateRange(service, channelId, oldestSavedEpisode.PublishedDate, time.Unix(0, 0))
+			getChannelVideosByDateRange(channelId, time.Now(), latestSavedEpisode.PublishedDate)
+			getChannelVideosByDateRange(channelId, oldestSavedEpisode.PublishedDate, time.Unix(0, 0))
 		} else {
-			getChannelVideosByDateRange(service, channelId, time.Unix(0, 0), time.Unix(0, 0))
+			getChannelVideosByDateRange(channelId, time.Unix(0, 0), time.Unix(0, 0))
 		}
 	}
 }
 
-func getChannelVideosByDateRange(service *ytApi.Service, channelID string, beforeDateParam time.Time, afterDateParam time.Time) {
+func getChannelVideosByDateRange(channelID string, beforeDateParam time.Time, afterDateParam time.Time) {
 
 	savedEpisodeIds, err := database.GetAllPodcastEpisodeIds(channelID)
 	if err != nil {
@@ -61,7 +61,7 @@ func getChannelVideosByDateRange(service *ytApi.Service, channelID string, befor
 	nextPageToken := ""
 	for {
 		var videoIdsNotSaved []string
-		searchCall := service.Search.List([]string{"id", "snippet"}).
+		searchCall := youtube.YtService.Search.List([]string{"id", "snippet"}).
 			ChannelId(channelID).
 			Type("video").
 			Order("date").
@@ -81,7 +81,7 @@ func getChannelVideosByDateRange(service *ytApi.Service, channelID string, befor
 
 		videoIdsNotSaved = append(videoIdsNotSaved, getValidVideosFromChannelResponse(searchCallResponse, savedEpisodeIds)...)
 		if len(videoIdsNotSaved) > 0 {
-			fetchAndSaveVideos(service, videoIdsNotSaved)
+			fetchAndSaveVideos(youtube.YtService, videoIdsNotSaved)
 		}
 
 		nextPageToken = searchCallResponse.NextPageToken
@@ -106,7 +106,7 @@ func getValidVideosFromChannelResponse(channelVideoResponse *ytApi.SearchListRes
 
 func fetchAndSaveVideos(service *ytApi.Service, videoIdsNotSaved []string) {
 	var missingVideos []models.PodcastEpisode
-	missingVideos = youtube.GetVideoAndValidate(service, videoIdsNotSaved, missingVideos)
+	missingVideos = youtube.GetVideoAndValidate(videoIdsNotSaved, missingVideos)
 
 	if len(missingVideos) > 0 {
 		database.SavePlaylistEpisodes(missingVideos)

@@ -13,14 +13,28 @@ import (
 	ytApi "google.golang.org/api/youtube/v3"
 )
 
-func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist bool) models.Podcast {
+var YtService *ytApi.Service
+
+func SetupYoutubeService() {
+	apiKey := config.AppConfig.Setup.GoogleApiKey
+	ctx := context.Background()
+	service, err := ytApi.NewService(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		log.Errorf("Error creating new YouTube client: %v", err)
+	}
+	if service == nil {
+		log.Errorf("Failed to create YouTube service: %v", err)
+	}
+	YtService = service
+}
+func GetChannelData(channelIdentifier string, isPlaylist bool) models.Podcast {
 	var channelCall *ytApi.ChannelsListCall
 	var channelId string
 	dbPodcast := database.GetPodcast(channelIdentifier)
 
 	if dbPodcast == nil {
 		if isPlaylist {
-			playlistCall := service.Playlists.List([]string{"snippet", "status", "contentDetails"}).
+			playlistCall := YtService.Playlists.List([]string{"snippet", "status", "contentDetails"}).
 				Id(channelIdentifier)
 			playlistResponse, err := playlistCall.Do()
 			if err != nil {
@@ -35,7 +49,7 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 			channelId = channelIdentifier
 		}
 
-		channelCall = service.Channels.List([]string{"snippet", "statistics", "contentDetails"}).
+		channelCall = YtService.Channels.List([]string{"snippet", "statistics", "contentDetails"}).
 			Id(channelId)
 		channelResponse, err := channelCall.Do()
 		if err != nil {
@@ -75,8 +89,8 @@ func GetChannelData(channelIdentifier string, service *ytApi.Service, isPlaylist
 	return *dbPodcast
 }
 
-func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
-	videoCall := service.Videos.List([]string{"id,snippet,contentDetails"}).
+func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
+	videoCall := YtService.Videos.List([]string{"id,snippet,contentDetails"}).
 		Id(videoIdsNotSaved...).
 		MaxResults(int64(len(videoIdsNotSaved)))
 
@@ -86,7 +100,7 @@ func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, miss
 		return nil
 	}
 
-	dur, err := time.ParseDuration(config.Config.MinDuration)
+	dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
 	if err != nil {
 		panic("Invalid MIN_DURATION format. Use formats like '5m', '1h', '400s'.")
 	}
@@ -110,7 +124,7 @@ func GetVideoAndValidate(service *ytApi.Service, videoIdsNotSaved []string, miss
 	return missingVideos
 }
 
-func FindChannel(channelID string, service *ytApi.Service) bool {
+func FindChannel(channelID string) bool {
 	exists, err := database.PodcastExists(channelID)
 	if err != nil {
 		log.Error(err)
@@ -118,7 +132,7 @@ func FindChannel(channelID string, service *ytApi.Service) bool {
 	}
 
 	if !exists {
-		channelCall := service.Channels.List([]string{"snippet", "statistics", "contentDetails"})
+		channelCall := YtService.Channels.List([]string{"snippet", "statistics", "contentDetails"})
 		channelCall = channelCall.Id(channelID)
 
 		channelResponse, err := channelCall.Do()
@@ -133,17 +147,4 @@ func FindChannel(channelID string, service *ytApi.Service) bool {
 		}
 	}
 	return true
-}
-
-func SetupYoutubeService() *ytApi.Service {
-	apiKey := config.Config.GoogleApiKey
-	ctx := context.Background()
-	service, err := ytApi.NewService(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		log.Errorf("Error creating new YouTube client: %v", err)
-	}
-	if service == nil {
-		log.Errorf("Failed to create YouTube service: %v", err)
-	}
-	return service
 }

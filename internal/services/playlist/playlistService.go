@@ -9,18 +9,15 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"net/http"
 
-	ytApi "google.golang.org/api/youtube/v3"
-
 	log "github.com/labstack/gommon/log"
 )
 
 func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	log.Debug("[RSS FEED] Building rss feed for playlist...")
 
-	service := youtube.SetupYoutubeService()
-	podcast := youtube.GetChannelData(youtubePlaylistId, service, true)
+	podcast := youtube.GetChannelData(youtubePlaylistId, true)
 
-	getYoutubePlaylistData(youtubePlaylistId, service)
+	getYoutubePlaylistData(youtubePlaylistId)
 	episodes, err := database.GetPodcastEpisodesByPodcastId(youtubePlaylistId, enum.PLAYLIST)
 	if err != nil {
 		log.Error(err)
@@ -31,13 +28,13 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	return rss.GenerateRssFeed(podcastRss, host, enum.PLAYLIST)
 }
 
-func getYoutubePlaylistData(youtubePlaylistId string, service *ytApi.Service) {
+func getYoutubePlaylistData(youtubePlaylistId string) {
 	continueRequestingPlaylistItems := true
 	var missingVideos []models.PodcastEpisode
 	pageToken := "first_call"
 
 	for continueRequestingPlaylistItems {
-		call := service.PlaylistItems.List([]string{"snippet", "status", "contentDetails"}).
+		call := youtube.YtService.PlaylistItems.List([]string{"snippet", "status", "contentDetails"}).
 			PlaylistId(youtubePlaylistId).
 			MaxResults(50)
 		call.Header().Set("order", "publishedAt desc")

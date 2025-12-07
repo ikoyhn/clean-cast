@@ -1,62 +1,101 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/spf13/viper"
+	gotenv "github.com/subosito/gotenv"
 )
 
-type ConfigDef struct {
-	ConfigDir              string
-	AudioDir               string
-	DbFile                 string
-	CookiesFile            string
-	Token                  string
-	GoogleApiKey           string
-	SponsorBlockCategories string
-	Cron                   string
-	MinDuration            string
+type Config struct {
+	Setup struct {
+		GoogleApiKey string `mapstructure:"google-api-key" validate:"required"`
+		AudioDir     string
+		Cron         string `mapstructure:"cron"`
+		ConfigDir    string `mapstructure:"config-dir" validate:"required"`
+		DbFile       string
+	} `mapstructure:"setup"`
+
+	Ntfy struct {
+		Server string `mapstructure:"server"`
+		Topic  string `mapstructure:"topic"`
+	} `mapstructure:"ntfy"`
+
+	Authentication struct {
+		Token     string `mapstructure:"token"`
+		BasicAuth struct {
+			Username string `mapstructure:"username" validate:"required_with=password"`
+			Password string `mapstructure:"password" validate:"required_with=username"`
+		} `mapstructure:"basic-auth"`
+	} `mapstructure:"authentication"`
+
+	Ytdlp struct {
+		CookiesFile            string `mapstructure:"cookies-file"`
+		SponsorBlockCategories string `mapstructure:"sponsorblock-categories"`
+		EpisodeDurationMinimum string `mapstructure:"episode-duration-minimum"`
+		YtdlpExtractorArgs     string `mapstructure:"ytdlp-extractor-args"`
+	} `mapstructure:"ytdlp"`
 }
 
-var Config *ConfigDef
+var validate = validator.New()
 
-func init() {
-	Config = &ConfigDef{}
+var AppConfig *Config
 
-	Config.ConfigDir = os.Getenv("CONFIG_DIR")
-	if Config.ConfigDir == "" {
-		Config.ConfigDir = "/config"
-	}
-	Config.AudioDir = path.Join(Config.ConfigDir, "audio")
-	Config.DbFile = path.Join(Config.ConfigDir, "sqlite.db")
-
-	cookiesFile := os.Getenv("COOKIES_FILE")
-	if cookiesFile != "" {
-		Config.CookiesFile = path.Join(Config.ConfigDir, cookiesFile)
-		println("CONFIG | Cookies file set: " + Config.CookiesFile)
+func Load() (*Config, error) {
+	_ = gotenv.Load()
+	configDir := os.Getenv("CONFIG_DIR")
+	if configDir == "" {
+		configDir = "/config"
 	}
 
-	Config.Token = os.Getenv("TOKEN")
-	if Config.Token != "" {
-		println("CONFIG | Token set.")
+	v := viper.New()
+	v.SetConfigName("properties")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(configDir)
+
+	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
+	v.SetDefault("setup.config-dir", configDir)
+	v.SetDefault("setup.audio-dir", "audio")
+	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
+
+	v.ReadInConfig()
+
+	replacer := strings.NewReplacer(".", "_", "-", "_")
+	v.SetEnvKeyReplacer(replacer)
+	viper.SetEnvPrefix("env")
+	v.AutomaticEnv()
+
+	v.BindEnv("setup.config-dir", "CONFIG_DIR")
+	v.BindEnv("setup.audio-dir", "AUDIO_DIR")
+	v.BindEnv("setup.google-api-key", "GOOGLE_API_KEY")
+	v.BindEnv("ytdlp.cookies-file", "COOKIES_FILE")
+	v.BindEnv("ntfy.server", "NTFY_SERVER")
+	v.BindEnv("ntfy.topic", "NTFY_TOPIC")
+	v.BindEnv("authentication.token", "TOKEN")
+	v.BindEnv("setup.cron", "CRON")
+	v.BindEnv("ytdlp.episode-duration-minimum", "MIN_DURATION")
+	v.BindEnv("ytdlp.sponsorblock-categories", "SPONSORBLOCK_CATEGORIES")
+	v.BindEnv("ytdlp.ytdlp-extractor-args", "YTDLP_EXTRACTOR_ARGS")
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	Config.GoogleApiKey = os.Getenv("GOOGLE_API_KEY")
-	if Config.GoogleApiKey == "" {
-		panic("GOOGLE_API_KEY is not set")
+	if err := validate.Struct(&cfg); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	Config.SponsorBlockCategories = os.Getenv("SPONSORBLOCK_CATEGORIES")
-	if Config.SponsorBlockCategories != "" {
-		println("CONFIG | Sponsor block segments defined: " + Config.SponsorBlockCategories)
+	AppConfig = &cfg
+	if AppConfig.Ytdlp.CookiesFile != "" {
+		AppConfig.Ytdlp.CookiesFile = path.Join(AppConfig.Setup.ConfigDir, AppConfig.Ytdlp.CookiesFile)
 	}
+	AppConfig.Setup.DbFile = path.Join(AppConfig.Setup.ConfigDir, "sqlite.db")
+	AppConfig.Setup.AudioDir = path.Join(AppConfig.Setup.ConfigDir, "audio")
 
-	Config.Cron = os.Getenv("CRON")
-	if Config.Cron != "" {
-		println("CONFIG | Cron set: " + Config.Cron)
-	}
-
-	Config.MinDuration = os.Getenv("MIN_DURATION")
-	if Config.MinDuration == "" {
-		Config.MinDuration = "3m"
-	}
+	return &cfg, nil
 }

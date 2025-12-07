@@ -1,0 +1,39 @@
+## Main settings for application
+# REQUIRED: "google-api-key"  - can either be set in here or in docker run command, view here to get an API key (https://developers.google.com/youtube/v3/getting-started)
+# OPTIONAL: "cron" - can be set manually, this is used to clean up old audio files that have not been accessed in one week (default)
+###
+setup:
+    google-api-key:
+    cron:
+
+### NTFY notifications, this requires a NTFY notifications server. Will allow you to receive notifications on episode download such as estimated download duration.
+### NTFY docs can be found here (https://docs.ntfy.sh/)
+# OPTIONAL: "server" - is the location your NTFY server is running on
+# OPTIONAL: "topic" - is where the notifications get published to, ensure your clients are subscribed to this topic to receive the notifications
+###
+ntfy:
+    server:
+    topic:
+
+### Optional Security Settings
+# OPTIONAL: "token" - Used for securing the endpoints. If using this you must add the query param `token` to the end of the URL for the `/rss` and `/channel` endpoint request ex.`?token=mySecureToken`
+# OPTIONAL: "username" - If you want to secure your app behind basic authentication set this field and the password field
+# OPTIONAL: "password" - If you want to secure your app behind basic authentication set this field and the username field
+###
+authentication:
+    token:
+    basic-auth:
+        username:
+        password:
+
+### YTDLP Settings
+# OPTIONAL: "cookies-file" - Set this if you want to use custom cookies for YT-DLP, store your cookies file in /config directory
+# OPTIONAL: "sponsorblock-categories" - Customize the categories that you would like to remove from your podcasts. String separated by `,` with possible values `sponsor,selfpromo,interaction,intro,outro,preview,music_offtopic,filler`. Default: `sponsor`
+# OPTIONAL: "episode-duration-minimum" - To filter out YT shorts for `/channel` podcasts there is a minimum duration a video has to be in order to grab it. The default is 5min, modify as needed. Example values: (30s, 5m, 1hr)
+# OPTIONAL: "extractor-args" - Custom YTDLP extractor args
+###
+ytdlp:
+    cookies-file:
+    sponsorblock-categories:
+    episode-duration-minimum:
+    extractor-args:
