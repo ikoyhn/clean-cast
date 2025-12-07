@@ -12,7 +12,9 @@ import (
 
 func Start() {
 
-	config.Load()
+	if _, err := config.Load(); err != nil {
+		panic(err)
+	}
 	youtube.SetupYoutubeService()
 	ytdlp.MustInstall(context.TODO(), nil)
 

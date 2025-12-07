@@ -116,7 +116,7 @@ Below is a guide to get the application running
       ```
 2. Run the command to start the app up
 
-3. Copy the [properties.template.yml](https://github.com/ikoyhn/clean-cast/blob/main/properties.template.yml) defaults into your properties.yml file that gets created in `/config`. In here you'll find settings such as NTFY notification setup.
+3. Copy the [properties.yml](https://github.com/ikoyhn/clean-cast/blob/main/properties.yml) into your `/config` folder. In here you'll find settings such as NTFY notification setup.
 
 4. Restart application after making any changes to `properties.yml`.
 

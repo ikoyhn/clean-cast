@@ -52,24 +52,21 @@ func Load() (*Config, error) {
 		configDir = "/config"
 	}
 
-	propertiesFile := path.Join(configDir, "properties.yml")
-	if _, err := os.Stat(propertiesFile); os.IsNotExist(err) {
-		if err := os.WriteFile(propertiesFile, []byte{}, 0644); err != nil {
-			return nil, fmt.Errorf("create properties.yml: %w", err)
-		}
-	}
-
 	v := viper.New()
 	v.SetConfigName("properties")
 	v.SetConfigType("yaml")
 	v.AddConfigPath(configDir)
 
+	propertiesFile := path.Join(configDir, "properties.yml")
+	fileInfo, err := os.Stat(propertiesFile)
+	if err == nil && fileInfo.Size() > 0 {
+		v.ReadInConfig()
+	}
+
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
 	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
-
-	v.ReadInConfig()
 
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	v.SetEnvKeyReplacer(replacer)
