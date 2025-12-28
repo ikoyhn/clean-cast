@@ -21,6 +21,10 @@ func SendNotification(message, title string) error {
 		req.Header.Set("Title", title)
 	}
 
+	if config.AppConfig.Ntfy.Authentication.Username != "" && config.AppConfig.Ntfy.Authentication.Password != "" {
+		req.SetBasicAuth(config.AppConfig.Ntfy.Authentication.Username, config.AppConfig.Ntfy.Authentication.Password)
+	}
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
