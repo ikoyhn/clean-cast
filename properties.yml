@@ -10,15 +10,17 @@ setup:
 ### NTFY docs can be found here (https://docs.ntfy.sh/)
 # OPTIONAL: "server" - is the location your NTFY server is running on
 # OPTIONAL: "topic" - is where the notifications get published to, ensure your clients are subscribed to this topic to receive the notifications
-# OPTIONAL: "authentication" - If your NTFY server requires basic authentication you can set the username and password here
+# OPTIONAL: "authentication" - If your NTFY server is secured you have the option of token or basic authentication to connect to NTFY server
 ###
 ###
 ntfy:
     server:
     topic:
     authentication:
-        username:
-        password:
+        token:
+        basic-auth:
+            username:
+            password:
 
 ### Optional Security Settings
 # OPTIONAL: "token" - Used for securing the endpoints. If using this you must add the query param `token` to the end of the URL for the `/rss` and `/channel` endpoint request ex.`?token=mySecureToken`

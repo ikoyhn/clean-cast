@@ -24,8 +24,11 @@ type Config struct {
 		Server         string `mapstructure:"server"`
 		Topic          string `mapstructure:"topic"`
 		Authentication struct {
-			Username string `mapstructure:"username" validate:"required_with=password"`
-			Password string `mapstructure:"password" validate:"required_with=username"`
+			Token     string `mapstructure:"token"`
+			BasicAuth struct {
+				Username string `mapstructure:"username" validate:"required_with=password"`
+				Password string `mapstructure:"password" validate:"required_with=username"`
+			} `mapstructure:"basic-auth"`
 		} `mapstructure:"authentication"`
 	} `mapstructure:"ntfy"`
 
