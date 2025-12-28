@@ -21,8 +21,12 @@ type Config struct {
 	} `mapstructure:"setup"`
 
 	Ntfy struct {
-		Server string `mapstructure:"server"`
-		Topic  string `mapstructure:"topic"`
+		Server         string `mapstructure:"server"`
+		Topic          string `mapstructure:"topic"`
+		Authentication struct {
+			Username string `mapstructure:"username" validate:"required_with=password"`
+			Password string `mapstructure:"password" validate:"required_with=username"`
+		} `mapstructure:"authentication"`
 	} `mapstructure:"ntfy"`
 
 	Authentication struct {
