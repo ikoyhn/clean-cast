@@ -2,10 +2,12 @@ package channel
 
 import (
 	"errors"
+	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
+	"ikoyhn/podcast-sponsorblock/internal/services/rss"
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"time"
 
@@ -16,7 +18,40 @@ import (
 	ytApi "google.golang.org/api/youtube/v3"
 )
 
-func GetChannelMetadataAndVideos(channelId string, params *models.RssRequestParams) {
+func BuildChannelRssFeed(channelId string, params *models.RssRequestParams, host string) []byte {
+	log.Debug("[RSS FEED] Building rss feed for channel...")
+	dbPodcast := database.GetPodcast(channelId)
+
+	shouldUpdate := true
+	if dbPodcast != nil && dbPodcast.LastBuildDate != "" {
+		dur, err := time.ParseDuration(config.AppConfig.Setup.PodcastRefreshInterval)
+		if err != nil {
+			panic("Invalid [podcast-refresh-interval] format. Use formats like '5m', '1h', '400s'.")
+		}
+		lastBuild, err := time.Parse(time.RFC1123, dbPodcast.LastBuildDate)
+		if err == nil && time.Since(lastBuild) < dur {
+			shouldUpdate = false
+			log.Infof("[YOUTUBE API] Skipping channel update, last build date within %v", dur)
+		}
+	}
+
+	if shouldUpdate {
+		dbPodcast = youtube.GetChannelData(dbPodcast, channelId, false)
+		getChannelMetadataAndVideos(channelId, params)
+		dbPodcast = database.GetPodcast(channelId)
+	}
+
+	episodes, err := database.GetPodcastEpisodesByPodcastId(channelId, enum.CHANNEL)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	podcastRss := rss.BuildPodcast(*dbPodcast, episodes)
+	return rss.GenerateRssFeed(podcastRss, host, enum.CHANNEL)
+}
+
+func getChannelMetadataAndVideos(channelId string, params *models.RssRequestParams) {
 	log.Info("[RSS FEED] Getting channel data...")
 
 	if !youtube.FindChannel(channelId) {

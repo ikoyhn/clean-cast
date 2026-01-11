@@ -4,12 +4,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
-	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
-	"ikoyhn/podcast-sponsorblock/internal/services/channel"
 	"ikoyhn/podcast-sponsorblock/internal/services/generator"
-	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -82,22 +79,6 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 	}
 
 	return ytPodcast.Bytes()
-}
-
-func BuildChannelRssFeed(channelId string, params *models.RssRequestParams, host string) []byte {
-	log.Info("[RSS FEED] Building rss feed for channel...")
-
-	podcast := youtube.GetChannelData(channelId, false)
-
-	channel.GetChannelMetadataAndVideos(podcast.Id, params)
-	episodes, err := database.GetPodcastEpisodesByPodcastId(podcast.Id, enum.CHANNEL)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	podcastRss := BuildPodcast(podcast, episodes)
-	return GenerateRssFeed(podcastRss, host, enum.CHANNEL)
 }
 
 func BuildPodcast(podcast models.Podcast, allItems []models.PodcastEpisode) models.Podcast {
