@@ -27,10 +27,9 @@ func SetupYoutubeService() {
 	}
 	YtService = service
 }
-func GetChannelData(channelIdentifier string, isPlaylist bool) models.Podcast {
+func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlaylist bool) *models.Podcast {
 	var channelCall *ytApi.ChannelsListCall
 	var channelId string
-	dbPodcast := database.GetPodcast(channelIdentifier)
 
 	if dbPodcast == nil {
 		if isPlaylist {
@@ -81,12 +80,11 @@ func GetChannelData(channelIdentifier string, isPlaylist bool) models.Podcast {
 			ArtistName:      channel.Snippet.Title,
 			Explicit:        "false",
 		}
-
-		dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
-		database.SavePodcast(dbPodcast)
 	}
 
-	return *dbPodcast
+	dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
+	database.UpdatePodcast(dbPodcast)
+	return dbPodcast
 }
 
 func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
@@ -102,7 +100,7 @@ func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.Podca
 
 	dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
 	if err != nil {
-		panic("Invalid MIN_DURATION format. Use formats like '5m', '1h', '400s'.")
+		panic("Invalid [episode-duration-minimum] format. Use formats like '5m', '1h', '400s'.")
 	}
 
 	for _, item := range videoResponse.Items {
