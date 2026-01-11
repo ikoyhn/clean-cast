@@ -4,10 +4,10 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/models"
+	"ikoyhn/podcast-sponsorblock/internal/services/channel"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"ikoyhn/podcast-sponsorblock/internal/services/downloader"
 	"ikoyhn/podcast-sponsorblock/internal/services/playlist"
-	"ikoyhn/podcast-sponsorblock/internal/services/rss"
 	"ikoyhn/podcast-sponsorblock/internal/services/sponsorblock"
 	"net/http"
 	"os"
@@ -28,7 +28,7 @@ func registerRoutes(e *echo.Echo) {
 			return err
 		}
 		rssRequestParams := validateQueryParams(c)
-		data := rss.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
+		data := channel.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")

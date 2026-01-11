@@ -1,10 +1,12 @@
 ## Main settings for application
 # REQUIRED: "google-api-key"  - can either be set in here or in docker run command, view here to get an API key (https://developers.google.com/youtube/v3/getting-started)
 # OPTIONAL: "cron" - can be set manually, this is used to clean up old audio files that have not been accessed in one week (default)
+# OPTIONAL: "cron" - can be set manually, this is used to limit how often podcasts are refreshed from YouTube (default every 1h), Example values: (30s, 5m, 1hr)
 ###
 setup:
     google-api-key:
     cron:
+    podcast-refresh-interval:
 
 ### NTFY notifications, this requires a NTFY notifications server. Will allow you to receive notifications on episode download such as estimated download duration.
 ### NTFY docs can be found here (https://docs.ntfy.sh/)

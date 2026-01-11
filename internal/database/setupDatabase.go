@@ -14,6 +14,7 @@ var db *gorm.DB
 
 func SetupDatabase() {
 	var err error
+	// Create the database file if it doesn't exist
 	if _, err := os.Stat(config.AppConfig.Setup.DbFile); os.IsNotExist(err) {
 		err := os.MkdirAll(config.AppConfig.Setup.ConfigDir, os.ModePerm)
 		if err != nil {

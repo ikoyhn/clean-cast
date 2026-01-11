@@ -13,11 +13,12 @@ import (
 
 type Config struct {
 	Setup struct {
-		GoogleApiKey string `mapstructure:"google-api-key" validate:"required"`
-		AudioDir     string
-		Cron         string `mapstructure:"cron"`
-		ConfigDir    string `mapstructure:"config-dir" validate:"required"`
-		DbFile       string
+		GoogleApiKey           string `mapstructure:"google-api-key" validate:"required"`
+		AudioDir               string
+		Cron                   string `mapstructure:"cron"`
+		ConfigDir              string `mapstructure:"config-dir" validate:"required"`
+		DbFile                 string
+		PodcastRefreshInterval string `mapstructure:"podcast-refresh-interval"`
 	} `mapstructure:"setup"`
 
 	Ntfy struct {
@@ -70,6 +71,7 @@ func Load() (*Config, error) {
 		v.ReadInConfig()
 	}
 
+	v.SetDefault("setup.podcast-refresh-interval", "1h")
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
