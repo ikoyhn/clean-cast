@@ -6,9 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
-	gotenv "github.com/subosito/gotenv"
 )
 
 type Config struct {
@@ -49,26 +47,27 @@ type Config struct {
 	} `mapstructure:"ytdlp"`
 }
 
-var validate = validator.New()
+var Config *ConfigDef
 
-var AppConfig *Config
+func init() {
+	Config = &ConfigDef{}
 
-func Load() (*Config, error) {
-	_ = gotenv.Load()
-	configDir := os.Getenv("CONFIG_DIR")
-	if configDir == "" {
-		configDir = "/config"
+	Config.ConfigDir = os.Getenv("CONFIG_DIR")
+	if Config.ConfigDir == "" {
+		Config.ConfigDir = "/config"
+	}
+	Config.AudioDir = path.Join(Config.ConfigDir, "audio")
+	Config.DbFile = path.Join(Config.ConfigDir, "sqlite.db")
+
+	cookiesFile := os.Getenv("COOKIES_FILE")
+	if cookiesFile != "" {
+		Config.CookiesFile = path.Join(Config.ConfigDir, cookiesFile)
+		println("CONFIG | Cookies file set: " + Config.CookiesFile)
 	}
 
-	v := viper.New()
-	v.SetConfigName("properties")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(configDir)
-
-	propertiesFile := path.Join(configDir, "properties.yml")
-	fileInfo, err := os.Stat(propertiesFile)
-	if err == nil && fileInfo.Size() > 0 {
-		v.ReadInConfig()
+	Config.Token = os.Getenv("TOKEN")
+	if Config.Token != "" {
+		println("CONFIG | Token set.")
 	}
 
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
@@ -100,16 +99,18 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	if err := validate.Struct(&cfg); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
+	Config.SponsorBlockCategories = os.Getenv("SPONSORBLOCK_CATEGORIES")
+	if Config.SponsorBlockCategories != "" {
+		println("CONFIG | Sponsor block segments defined: " + Config.SponsorBlockCategories)
 	}
 
-	AppConfig = &cfg
-	if AppConfig.Ytdlp.CookiesFile != "" {
-		AppConfig.Ytdlp.CookiesFile = path.Join(AppConfig.Setup.ConfigDir, AppConfig.Ytdlp.CookiesFile)
+	Config.Cron = os.Getenv("CRON")
+	if Config.Cron != "" {
+		println("CONFIG | Cron set: " + Config.Cron)
 	}
-	AppConfig.Setup.DbFile = path.Join(AppConfig.Setup.ConfigDir, "sqlite.db")
-	AppConfig.Setup.AudioDir = path.Join(AppConfig.Setup.ConfigDir, "audio")
 
-	return &cfg, nil
+	Config.MinDuration = os.Getenv("MIN_DURATION")
+	if Config.MinDuration == "" {
+		Config.MinDuration = "3m"
+	}
 }
