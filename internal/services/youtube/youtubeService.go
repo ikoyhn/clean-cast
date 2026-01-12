@@ -27,10 +27,9 @@ func SetupYoutubeService() {
 	}
 	YtService = service
 }
-func GetChannelData(channelIdentifier string, isPlaylist bool) models.Podcast {
+func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlaylist bool) *models.Podcast {
 	var channelCall *ytApi.ChannelsListCall
 	var channelId string
-	dbPodcast := database.GetPodcast(channelIdentifier)
 
 	if dbPodcast == nil {
 		if isPlaylist {
@@ -81,12 +80,11 @@ func GetChannelData(channelIdentifier string, isPlaylist bool) models.Podcast {
 			ArtistName:      channel.Snippet.Title,
 			Explicit:        "false",
 		}
-
-		dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
-		database.SavePodcast(dbPodcast)
 	}
+	dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
+	database.UpdatePodcast(dbPodcast)
 
-	return *dbPodcast
+	return dbPodcast
 }
 
 func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
