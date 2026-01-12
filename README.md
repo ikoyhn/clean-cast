@@ -70,6 +70,7 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#local-development">Local Development</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -178,6 +179,18 @@ See the [open issues](https://github.com/ikoyhn/clean-cast/issues) for a full li
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
+<!-- LOCAL DEVELOPMENT -->
+## Running Locally
+(NON-Windows only for now)
+
+1. Install latest Golang version for your system
+2. Install [Delve](https://github.com/go-delve/delve/tree/master/Documentation/installation)
+3. Create `.env` in root of the project
+  a. Set GOOGLE_API_KEY and CONFIG_DIR in env. You can set more such as the properties from the yml for testing.
+4. Run using launch.json
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- CONTRIBUTING -->
