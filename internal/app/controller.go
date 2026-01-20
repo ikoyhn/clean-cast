@@ -40,7 +40,8 @@ func registerRoutes(e *echo.Echo) {
 			return err
 		}
 		validateQueryParams(c)
-		data := playlist.BuildPlaylistRssFeed(c.Param("youtubePlaylistId"), handler(c.Request()))
+		playlistId := strings.Split(c.Param("youtubePlaylistId"), "&")[0]
+		data := playlist.BuildPlaylistRssFeed(playlistId, handler(c.Request()))
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")

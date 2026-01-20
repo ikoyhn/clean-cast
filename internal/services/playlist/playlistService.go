@@ -33,7 +33,7 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	}
 
 	if shouldUpdate {
-		dbPodcast = youtube.GetChannelData(dbPodcast, youtubePlaylistId, false)
+		dbPodcast = youtube.GetChannelData(dbPodcast, youtubePlaylistId, true)
 		getYoutubePlaylistData(youtubePlaylistId)
 		dbPodcast = database.GetPodcast(youtubePlaylistId)
 	}
