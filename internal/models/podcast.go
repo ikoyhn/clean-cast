@@ -1,6 +1,7 @@
 package models
 
 import (
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"time"
 
 	log "github.com/labstack/gommon/log"
@@ -39,9 +40,8 @@ type EpisodePlaybackHistory struct {
 	TotalTimeSkipped float64 `json:"total_time_skipped"`
 }
 
-func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEpisode {
-	// For PlaylistItems, use VideoPublishedAt for the actual publication date
-	publishedAt, err := time.Parse("2006-01-02T15:04:05Z07:00", youtubeVideo.ContentDetails.VideoPublishedAt)
+func NewPodcastEpisode(youtubeVideo *youtube.Video, duration time.Duration, podcastType enum.PodcastType, podcastId string) PodcastEpisode {
+	publishedAt, err := time.Parse("2006-01-02T15:04:05Z07:00", youtubeVideo.Snippet.PublishedAt)
 	if err != nil {
 		log.Error(err)
 	}
@@ -58,28 +58,13 @@ func NewPodcastEpisodeFromPlaylist(youtubeVideo *youtube.PlaylistItem) PodcastEp
 	}
 
 	return PodcastEpisode{
-		YoutubeVideoId:     youtubeVideo.Snippet.ResourceId.VideoId,
-		EpisodeName:        youtubeVideo.Snippet.Title,
-		EpisodeDescription: youtubeVideo.Snippet.Description,
-		PublishedDate:      publishedAt,
-		Type:               "PLAYLIST",
-		PodcastId:          youtubeVideo.Snippet.PlaylistId,
-		ImageUrl:           imageUrl,
-	}
-}
-
-func NewPodcastEpisodeFromSearch(youtubeVideo *youtube.Video, duration time.Duration) PodcastEpisode {
-	publishedAt, err := time.Parse("2006-01-02T15:04:05Z07:00", youtubeVideo.Snippet.PublishedAt)
-	if err != nil {
-		log.Error(err)
-	}
-	return PodcastEpisode{
 		YoutubeVideoId:     youtubeVideo.Id,
 		EpisodeName:        youtubeVideo.Snippet.Title,
 		EpisodeDescription: youtubeVideo.Snippet.Description,
 		PublishedDate:      publishedAt,
-		Type:               "CHANNEL",
-		PodcastId:          youtubeVideo.Snippet.ChannelId,
+		Type:               string(podcastType),
+		PodcastId:          podcastId,
 		Duration:           duration,
+		ImageUrl:           imageUrl,
 	}
 }

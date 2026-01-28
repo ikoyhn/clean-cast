@@ -4,6 +4,7 @@ import (
 	"context"
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
+	"ikoyhn/podcast-sponsorblock/internal/enum"
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"time"
@@ -87,7 +88,11 @@ func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlayl
 	return dbPodcast
 }
 
-func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.PodcastEpisode) []models.PodcastEpisode {
+func GetVideosAndValidate(videoIdsNotSaved []string, podcastType enum.PodcastType, podcastId string) {
+	if len(videoIdsNotSaved) == 0 {
+		return
+	}
+	var missingVideos []models.PodcastEpisode
 	videoCall := YtService.Videos.List([]string{"id,snippet,contentDetails"}).
 		Id(videoIdsNotSaved...).
 		MaxResults(int64(len(videoIdsNotSaved)))
@@ -95,7 +100,6 @@ func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.Podca
 	videoResponse, err := videoCall.Do()
 	if err != nil {
 		log.Error(err)
-		return nil
 	}
 
 	dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
@@ -113,13 +117,15 @@ func GetVideoAndValidate(videoIdsNotSaved []string, missingVideos []models.Podca
 
 			if duration.Seconds() > dur.Seconds() {
 				if database.IsEpisodeSaved(item) {
-					return missingVideos
+					continue
 				}
-				missingVideos = append(missingVideos, models.NewPodcastEpisodeFromSearch(item, duration))
+				missingVideos = append(missingVideos, models.NewPodcastEpisode(item, duration, podcastType, podcastId))
 			}
 		}
 	}
-	return missingVideos
+	if len(missingVideos) > 0 {
+		database.SavePlaylistEpisodes(missingVideos)
+	}
 }
 
 func FindChannel(channelID string) bool {
