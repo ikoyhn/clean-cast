@@ -116,7 +116,7 @@ func getChannelVideosByDateRange(channelID string, beforeDateParam time.Time, af
 
 		videoIdsNotSaved = append(videoIdsNotSaved, getValidVideosFromChannelResponse(searchCallResponse, savedEpisodeIds)...)
 		if len(videoIdsNotSaved) > 0 {
-			fetchAndSaveVideos(youtube.YtService, videoIdsNotSaved)
+			youtube.GetVideosAndValidate(videoIdsNotSaved, enum.CHANNEL, channelID)
 		}
 
 		nextPageToken = searchCallResponse.NextPageToken
@@ -137,15 +137,6 @@ func getValidVideosFromChannelResponse(channelVideoResponse *ytApi.SearchListRes
 	}
 	channelVideoResponse.Items = filteredItems
 	return videoIds
-}
-
-func fetchAndSaveVideos(service *ytApi.Service, videoIdsNotSaved []string) {
-	var missingVideos []models.PodcastEpisode
-	missingVideos = youtube.GetVideoAndValidate(videoIdsNotSaved, missingVideos)
-
-	if len(missingVideos) > 0 {
-		database.SavePlaylistEpisodes(missingVideos)
-	}
 }
 
 func determineRequestType(params *models.RssRequestParams) enum.PodcastFetchType {

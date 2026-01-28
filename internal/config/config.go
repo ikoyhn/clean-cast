@@ -71,12 +71,16 @@ func Load() (*Config, error) {
 		v.ReadInConfig()
 	}
 
-	v.SetDefault("setup.podcast-refresh-interval", "1h")
 	v.SetDefault("ytdlp.episode-duration-minimum", "3m")
 	v.SetDefault("setup.config-dir", configDir)
 	v.SetDefault("setup.audio-dir", "audio")
 	v.SetDefault("ytdlp.sponsorblock-categories", "sponsor")
 	v.SetDefault("setup.google-api-key", os.Getenv("GOOGLE_API_KEY"))
+	if os.Getenv("PODCAST_REFRESH_INTERVAL") != "" {
+		v.SetDefault("setup.podcast-refresh-interval", os.Getenv("PODCAST_REFRESH_INTERVAL"))
+	} else {
+		v.SetDefault("setup.podcast-refresh-interval", "1h")
+	}
 
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	v.SetEnvKeyReplacer(replacer)
@@ -86,6 +90,7 @@ func Load() (*Config, error) {
 	v.BindEnv("setup.config-dir", "CONFIG_DIR")
 	v.BindEnv("setup.audio-dir", "AUDIO_DIR")
 	v.BindEnv("setup.google-api-key", "GOOGLE_API_KEY")
+	v.BindEnv("setup.podcast-refresh-interval", "PODCAST_REFRESH_INTERVAL")
 	v.BindEnv("ytdlp.cookies-file", "COOKIES_FILE")
 	v.BindEnv("ntfy.server", "NTFY_SERVER")
 	v.BindEnv("ntfy.topic", "NTFY_TOPIC")

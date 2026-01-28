@@ -4,11 +4,11 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
-	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"ikoyhn/podcast-sponsorblock/internal/services/rss"
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 	"net/http"
+	"strconv"
 	"time"
 
 	log "github.com/labstack/gommon/log"
@@ -50,11 +50,11 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 
 func getYoutubePlaylistData(youtubePlaylistId string) {
 	continueRequestingPlaylistItems := true
-	var missingVideos []models.PodcastEpisode
 	pageToken := "first_call"
 	isPlaylistDescOrder := true
 
 	for continueRequestingPlaylistItems {
+		var missingVideoIds []string
 		call := youtube.YtService.PlaylistItems.List([]string{"snippet", "status", "contentDetails"}).
 			PlaylistId(youtubePlaylistId).
 			MaxResults(50)
@@ -66,10 +66,10 @@ func getYoutubePlaylistData(youtubePlaylistId string) {
 
 		response, ytAgainErr := call.Do()
 		if ytAgainErr != nil {
-			log.Errorf("Error calling YouTube API for Playlist: %w. Ensure your API key is valid, if your API key is valid you have have reached your API quota. Error: %w", youtubePlaylistId, response)
+			log.Errorf("Error calling YouTube API for Playlist: %s. Ensure your API key is valid, if your API key is valid you have have reached your API quota. Error: %w", youtubePlaylistId, response)
 		}
 		if response.HTTPStatusCode != http.StatusOK {
-			log.Errorf("YouTube API returned status code %w for Playlist: %w", response.HTTPStatusCode, youtubePlaylistId)
+			log.Errorf("YouTube API returned status code %s for Playlist: %s", strconv.Itoa(response.HTTPStatusCode), youtubePlaylistId)
 			return
 		}
 
@@ -86,25 +86,21 @@ func getYoutubePlaylistData(youtubePlaylistId string) {
 			if !exists {
 				cleanedVideo := common.CleanPlaylistItems(item)
 				if cleanedVideo != nil {
-					missingVideos = append(missingVideos, models.NewPodcastEpisodeFromPlaylist(cleanedVideo))
+					missingVideoIds = append(missingVideoIds, cleanedVideo.Snippet.ResourceId.VideoId)
 				}
 			} else {
-				if len(missingVideos) > 0 {
-					database.SavePlaylistEpisodes(missingVideos)
-				}
 				if isPlaylistDescOrder {
-					return
+					continueRequestingPlaylistItems = false
+					break
 				} else {
 					log.Info("[YOUTUBE API] Playlist not in DESC order, grabbing all episodes")
 				}
 			}
 		}
+		youtube.GetVideosAndValidate(missingVideoIds, enum.PLAYLIST, youtubePlaylistId)
 		if response.NextPageToken == "" {
 			continueRequestingPlaylistItems = false
 		}
-	}
-	if len(missingVideos) > 0 {
-		database.SavePlaylistEpisodes(missingVideos)
 	}
 }
 
