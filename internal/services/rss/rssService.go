@@ -54,6 +54,7 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			podcastItem := generator.Item{
 				Title:       podcastEpisode.EpisodeName,
 				Description: escapedDescription,
+				IDuration:   fmt.Sprintf("%d", int(podcastEpisode.Duration.Seconds())),
 				GUID: struct {
 					Value       string `xml:",chardata"`
 					IsPermaLink bool   `xml:"isPermaLink,attr"`
