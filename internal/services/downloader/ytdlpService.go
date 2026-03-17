@@ -7,7 +7,6 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services/ntfy"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -21,22 +20,34 @@ var youtubeVideoMutexes = &sync.Map{}
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="
 
-func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
-	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoIdFile)
+func getFilenameWithId(baseDir, videoId string) string {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return videoId
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), videoId+".") && !entry.IsDir() {
+			return entry.Name()
+		}
+	}
+	return videoId
+}
+
+func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
+	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
 	if !ok {
 		mutex = &sync.Mutex{}
-		youtubeVideoMutexes.Store(youtubeVideoIdFile, mutex)
+		youtubeVideoMutexes.Store(youtubeVideoId, mutex)
 	}
 
 	mutex.(*sync.Mutex).Lock()
 
-	filePath := config.AppConfig.Setup.AudioDir + youtubeVideoIdFile
-	if _, err := os.Stat(filePath); err == nil {
+	if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
+		filename := getFilenameWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId)
 		mutex.(*sync.Mutex).Unlock()
-		return youtubeVideoIdFile, make(chan struct{})
+		return filename, make(chan struct{})
 	}
 
-	youtubeVideoId := strings.TrimSuffix(youtubeVideoIdFile, ".m4a")
 	title := youtubeVideoId
 	episode, err := database.GetEpisodeByVideoId(youtubeVideoId)
 	if err != nil {
@@ -52,7 +63,7 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 	var etaNotified uint32 = 0
 	dl := ytdlp.New().
 		NoProgress().
-		FormatSort("ext::m4a[format_note*=original]").
+		Format("bestaudio[ext=m4a]/bestaudio[ext=aac]/bestaudio[ext=opus]/bestaudio[ext=vorbis]/bestaudio/best").
 		SponsorblockRemove(categories).
 		ExtractAudio().
 		NoPlaylist().
@@ -76,10 +87,9 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 		r, dlErr := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
 
 		if r.ExitCode != 0 {
-			file, err := os.Open(path.Join(config.AppConfig.Setup.AudioDir, youtubeVideoId+".m4a"))
-			if file != nil || err == nil {
+			if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
 				ntfy.SendNotification("Download completed!", "Clean Cast - Success")
-				log.Warn("Download exited with non-zero code, but file exists: ", filePath)
+				log.Warn("Download exited with non-zero code, but file exists: ", youtubeVideoId)
 			} else {
 				if dlErr != nil {
 					ntfy.SendNotification("Download failed!", "Clean Cast - Error")
@@ -89,14 +99,13 @@ func GetYoutubeVideo(youtubeVideoIdFile string) (string, <-chan struct{}) {
 		} else {
 			log.Infof("%s download completed successfully.", title)
 			ntfy.SendNotification(fmt.Sprintf("%s download success!", title), "Clean Cast - Success")
-
 		}
 		mutex.(*sync.Mutex).Unlock()
-
 		close(done)
 	}()
 
-	return youtubeVideoId, done
+	filename := getFilenameWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId)
+	return filename, done
 }
 
 func ytdlpProgress(etaNotified *uint32, prog ytdlp.ProgressUpdate, title string) {

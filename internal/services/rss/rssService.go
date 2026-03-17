@@ -36,7 +36,7 @@ func GenerateRssFeed(podcast models.Podcast, host string, podcastType enum.Podca
 			if (podcastEpisode.Type == "CHANNEL" && podcastEpisode.Duration.Seconds() < 120) || podcastEpisode.EpisodeName == "Private video" || podcastEpisode.EpisodeDescription == "This video is private." {
 				continue
 			}
-			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId + ".m4a"
+			mediaUrl := host + "/media/" + podcastEpisode.YoutubeVideoId
 
 			if config.AppConfig.Authentication.Token != "" {
 				mediaUrl = mediaUrl + "?token=" + config.AppConfig.Authentication.Token

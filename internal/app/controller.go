@@ -53,33 +53,29 @@ func registerRoutes(e *echo.Echo) {
 			return err
 		}
 
-		fileName := c.Param("youtubeVideoId")
-		if strings.Contains(fileName, "/") || strings.Contains(fileName, "\\") || strings.Contains(fileName, "..") {
+		youtubeVideoId := c.Param("youtubeVideoId")
+		if strings.Contains(youtubeVideoId, "/") || strings.Contains(youtubeVideoId, "\\") || strings.Contains(youtubeVideoId, "..") {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid file name")
 		}
-		if !common.IsValidParam(fileName) {
+		if !common.IsValidParam(youtubeVideoId) {
 			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
-		}
-		if !common.IsValidFilename(fileName) {
-			c.Error(echo.ErrNotFound)
 		}
 
 		audioDirAbs, err := filepath.Abs(config.AppConfig.Setup.AudioDir)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Server config error")
 		}
-		requestedFileAbs, err := filepath.Abs(filepath.Join(config.AppConfig.Setup.AudioDir, fileName))
-		if err != nil || !strings.HasPrefix(requestedFileAbs, audioDirAbs+string(os.PathSeparator)) && requestedFileAbs != audioDirAbs {
-			return echo.ErrNotFound
-		}
 
-		file, err := os.Open(requestedFileAbs)
-		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(fileName[:len(fileName)-4])
+		fileName := database.FindFileWithId(audioDirAbs, youtubeVideoId)
+
+		file, err := os.Open(fileName)
+		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(youtubeVideoId)
 		if file == nil || err != nil || needRedownload {
-			database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
-			fileName, done := downloader.GetYoutubeVideo(fileName)
+			database.UpdateEpisodePlaybackHistory(youtubeVideoId, totalTimeSkipped)
+			_, done := downloader.GetYoutubeVideo(youtubeVideoId)
 			<-done
-			file, err = os.Open(path.Join(config.AppConfig.Setup.AudioDir, fileName+".m4a"))
+			fileName = database.FindFileWithId(audioDirAbs, youtubeVideoId)
+			file, err = os.Open(fileName)
 			if err != nil || file == nil {
 				return err
 			}
@@ -87,13 +83,13 @@ func registerRoutes(e *echo.Echo) {
 
 			rangeHeader := c.Request().Header.Get("Range")
 			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName+".m4a"))
+				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName))
 				return nil
 			}
 			return c.Stream(http.StatusOK, "audio/mp4", file)
 		}
 
-		database.UpdateEpisodePlaybackHistory(fileName[:len(fileName)-4], totalTimeSkipped)
+		database.UpdateEpisodePlaybackHistory(youtubeVideoId, totalTimeSkipped)
 		rangeHeader := c.Request().Header.Get("Range")
 		if rangeHeader != "" {
 			http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName))
