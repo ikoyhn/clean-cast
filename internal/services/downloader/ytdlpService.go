@@ -33,7 +33,7 @@ func getFilenameWithId(baseDir, videoId string) string {
 	return videoId
 }
 
-func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
+func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
 	if !ok {
 		mutex = &sync.Mutex{}
@@ -43,9 +43,8 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 	mutex.(*sync.Mutex).Lock()
 
 	if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
-		filename := getFilenameWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId)
 		mutex.(*sync.Mutex).Unlock()
-		return filename, make(chan struct{})
+		return make(chan struct{})
 	}
 
 	title := youtubeVideoId
@@ -104,8 +103,7 @@ func GetYoutubeVideo(youtubeVideoId string) (string, <-chan struct{}) {
 		close(done)
 	}()
 
-	filename := getFilenameWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId)
-	return filename, done
+	return done
 }
 
 func ytdlpProgress(etaNotified *uint32, prog ytdlp.ProgressUpdate, title string) {

@@ -11,7 +11,6 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/services/sponsorblock"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -66,16 +65,17 @@ func registerRoutes(e *echo.Echo) {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Server config error")
 		}
 
-		fileName := database.FindFileWithId(audioDirAbs, youtubeVideoId)
-
-		file, err := os.Open(fileName)
 		needRedownload, totalTimeSkipped := sponsorblock.DeterminePodcastDownload(youtubeVideoId)
+		database.UpdateEpisodePlaybackHistory(youtubeVideoId, totalTimeSkipped)
+
+		filePath := database.FindFileWithId(audioDirAbs, youtubeVideoId)
+		file, err := os.Open(filePath)
+
 		if file == nil || err != nil || needRedownload {
-			database.UpdateEpisodePlaybackHistory(youtubeVideoId, totalTimeSkipped)
-			_, done := downloader.GetYoutubeVideo(youtubeVideoId)
+			done := downloader.GetYoutubeVideo(youtubeVideoId)
 			<-done
-			fileName = database.FindFileWithId(audioDirAbs, youtubeVideoId)
-			file, err = os.Open(fileName)
+			filePath = database.FindFileWithId(audioDirAbs, youtubeVideoId)
+			file, err = os.Open(filePath)
 			if err != nil || file == nil {
 				return err
 			}
@@ -83,16 +83,16 @@ func registerRoutes(e *echo.Echo) {
 
 			rangeHeader := c.Request().Header.Get("Range")
 			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName))
+				http.ServeFile(c.Response().Writer, c.Request(), filePath)
 				return nil
 			}
 			return c.Stream(http.StatusOK, "audio/mp4", file)
 		}
 
-		database.UpdateEpisodePlaybackHistory(youtubeVideoId, totalTimeSkipped)
+		defer file.Close()
 		rangeHeader := c.Request().Header.Get("Range")
 		if rangeHeader != "" {
-			http.ServeFile(c.Response().Writer, c.Request(), path.Join(config.AppConfig.Setup.AudioDir, fileName))
+			http.ServeFile(c.Response().Writer, c.Request(), filePath)
 			return nil
 		}
 		return c.Stream(http.StatusOK, "audio/mp4", file)
