@@ -6,7 +6,6 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/services/ntfy"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -19,19 +18,6 @@ import (
 var youtubeVideoMutexes = &sync.Map{}
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="
-
-func getFilenameWithId(baseDir, videoId string) string {
-	entries, err := os.ReadDir(baseDir)
-	if err != nil {
-		return videoId
-	}
-	for _, entry := range entries {
-		if strings.HasPrefix(entry.Name(), videoId+".") && !entry.IsDir() {
-			return entry.Name()
-		}
-	}
-	return videoId
-}
 
 func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
