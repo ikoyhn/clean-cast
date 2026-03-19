@@ -48,8 +48,10 @@ func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 	var etaNotified uint32 = 0
 	dl := ytdlp.New().
 		NoProgress().
-		Format("bestaudio[ext=m4a]/bestaudio[ext=aac]/bestaudio[ext=opus]/bestaudio[ext=vorbis]/bestaudio/best").
+		Format("bestaudio[ext=m4a]/bestaudio/best").
 		SponsorblockRemove(categories).
+		RemoteComponents("COMPONENTS").
+		JsRuntimes("bun").
 		ExtractAudio().
 		NoPlaylist().
 		FFmpegLocation("/usr/bin/ffmpeg").
