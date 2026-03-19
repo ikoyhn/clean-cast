@@ -24,5 +24,7 @@ jobs:
           context: .
           push: true
           tags: |
+            ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:${{ github.event.release.tag_name }}
             ${{ secrets.DOCKER_USERNAME }}/go-podcast-sponsor-block:latest
+            ${{ secrets.DOCKER_USERNAME }}/clean-cast:${{ github.event.release.tag_name }}
             ${{ secrets.DOCKER_USERNAME }}/clean-cast:latest
