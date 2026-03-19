@@ -6,6 +6,7 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/labstack/gommon/log"
@@ -108,19 +109,22 @@ func DeletePodcastCronJob() {
 	db.Where("last_access_date < ?", oneWeekAgo).Find(&histories)
 
 	for _, history := range histories {
-		filePath := path.Join(config.AppConfig.Setup.AudioDir, history.YoutubeVideoId+".m4a")
-		err := os.Remove(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				log.Debug("[DB] File not found when attempting to delete: " + filePath)
-			} else {
-				log.Warn("[DB] Failed to remove file: " + filePath + " error: " + err.Error())
+		filePath := FindFileWithId(config.AppConfig.Setup.AudioDir, history.YoutubeVideoId)
+		if filePath == "" {
+			log.Debug("[DB] File not found when attempting to delete for video: " + history.YoutubeVideoId)
+		} else {
+			err := os.Remove(filePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					log.Debug("[DB] File not found when attempting to delete: " + filePath)
+				} else {
+					log.Warn("[DB] Failed to remove file: " + filePath + " error: " + err.Error())
+				}
 			}
 		}
 
 		if delErr := db.Delete(&history).Error; delErr != nil {
 			log.Error("[DB] Failed to delete playback history for " + history.YoutubeVideoId + ": " + delErr.Error())
-			// continue processing other histories even if delete failed
 			continue
 		}
 
@@ -135,4 +139,30 @@ func GetEpisodeByVideoId(videoId string) (*models.PodcastEpisode, error) {
 		return nil, err
 	}
 	return &episode, nil
+}
+
+func FindFileWithId(baseDir, videoId string) string {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return ""
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), videoId+".") && !entry.IsDir() {
+			return path.Join(baseDir, entry.Name())
+		}
+	}
+	return ""
+}
+
+func FileExistsWithId(baseDir, videoId string) bool {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), videoId+".") && !entry.IsDir() {
+			return true
+		}
+	}
+	return false
 }
