@@ -138,16 +138,16 @@ type Item struct {
 	Enclosure        *Enclosure
 
 	// https://help.apple.com/itc/podcasts_connect/#/itcb54353390
-	IAuthor            string `xml:"itunes:author,omitempty"`
-	ISubtitle          string `xml:"itunes:subtitle,omitempty"`
+	IAuthor            string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd author,omitempty"`
+	ISubtitle          string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd subtitle,omitempty"`
 	ISummary           *ISummary
-	IDuration          string `xml:"itunes:duration,omitempty"`
-	IExplicit          string `xml:"itunes:explicit,omitempty"`
-	IIsClosedCaptioned string `xml:"itunes:isClosedCaptioned,omitempty"`
-	IOrder             string `xml:"itunes:order,omitempty"`
+	IDuration          string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd duration,omitempty"`
+	IExplicit          string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd explicit,omitempty"`
+	IIsClosedCaptioned string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd isClosedCaptioned,omitempty"`
+	IOrder             string `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd order,omitempty"`
 	IImage             struct {
 		Href string `xml:"href,attr"`
-	} `xml:"itunes:image,omitempty"`
+	} `xml:"http://www.itunes.com/dtds/podcast-1.0.dtd image,omitempty"`
 }
 
 // AddEnclosure adds the downloadable asset to the podcast Item.
@@ -245,7 +245,7 @@ type Podcast struct {
 	IOwner      *Author // Author is formatted for itunes as-is
 	ICategories []*ICategory
 
-	Items []*Item
+	Items []*Item `xml:"item"`
 
 	encode func(w io.Writer, o interface{}) error
 }

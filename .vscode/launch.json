@@ -9,6 +9,24 @@
             "program": "${workspaceFolder}/cmd/app/main.go",
             "envFile": "${workspaceFolder}/.env",
             "args": []
+        },
+        {
+            "name": "Test Playlist RSS IT",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/internal/services/playlist",
+            "args": ["-test.run", "TestGenerateRSSFromPlaylist_IT", "-test.v"],
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Test Channel RSS IT",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/internal/services/channel",
+            "args": ["-test.run", "TestGenerateRSSFromChannel_IT", "-test.v"],
+            "envFile": "${workspaceFolder}/.env",
         }
     ]
 }

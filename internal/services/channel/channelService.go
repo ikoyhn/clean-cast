@@ -140,9 +140,9 @@ func getValidVideosFromChannelResponse(channelVideoResponse *ytApi.SearchListRes
 }
 
 func determineRequestType(params *models.RssRequestParams) enum.PodcastFetchType {
-	if params.Date != nil {
-		return enum.DATE
-	} else {
+	if params == nil || params.Date == nil {
 		return enum.DEFAULT
+	} else {
+		return enum.DATE
 	}
 }
