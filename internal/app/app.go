@@ -16,7 +16,7 @@ func Start() {
 		panic(err)
 	}
 	youtube.SetupYoutubeService()
-	ytdlp.MustInstall(context.TODO(), nil)
+	ytdlp.MustInstallAll(context.TODO())
 
 	e := echo.New()
 	e.HideBanner = true
