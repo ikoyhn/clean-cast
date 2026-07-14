@@ -66,7 +66,7 @@ func getYoutubePlaylistData(youtubePlaylistId string) {
 
 		response, ytAgainErr := call.Do()
 		if ytAgainErr != nil {
-			log.Errorf("Error calling YouTube API for Playlist: %s. Ensure your API key is valid, if your API key is valid you have have reached your API quota. Error: %w", youtubePlaylistId, response)
+			log.Errorf("Error calling YouTube API for Playlist: %s. Ensure your API key is valid, if your API key is valid you have have reached your API quota.", youtubePlaylistId)
 		}
 		if response.HTTPStatusCode != http.StatusOK {
 			log.Errorf("YouTube API returned status code %s for Playlist: %s", strconv.Itoa(response.HTTPStatusCode), youtubePlaylistId)
