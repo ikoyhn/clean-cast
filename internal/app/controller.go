@@ -144,10 +144,14 @@ func setupCron() {
 	if config.AppConfig.Setup.Cron != "" {
 		cronSchedule = config.AppConfig.Setup.Cron
 	}
+
+	schedule, err := cron.ParseStandard(cronSchedule)
+	if err != nil {
+		log.Errorf("[CRON] Invalid cron schedule %q (%v), falling back to weekly", cronSchedule, err)
+		schedule, _ = cron.ParseStandard("0 0 * * 0")
+	}
 	c := cron.New()
-	c.AddFunc(cronSchedule, func() {
-		database.DeletePodcastCronJob()
-	})
+	c.Schedule(schedule, cron.FuncJob(database.DeletePodcastCronJob))
 	c.Start()
 }
 
