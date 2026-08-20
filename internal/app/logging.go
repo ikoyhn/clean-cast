@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	log "github.com/labstack/gommon/log"
 )
 
@@ -13,6 +14,7 @@ func setupLogging(e *echo.Echo) {
 	log.SetLevel(log.INFO)
 	log.SetHeader("${time_rfc3339} | ${level} | ${message}")
 
+	e.Use(middleware.Recover())
 	e.Use(redactTokenLogger)
 }
 

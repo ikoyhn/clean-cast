@@ -7,27 +7,25 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
 	log "github.com/labstack/gommon/log"
 )
 
 const SPONSORBLOCK_API_URL = "https://sponsor.ajay.app/api/skipSegments?videoID="
 
+var sponsorBlockClient = &http.Client{Timeout: 15 * time.Second}
+
 func DeterminePodcastDownload(youtubeVideoId string) (bool, float64) {
 	episodeHistory := database.GetEpisodePlaybackHistory(youtubeVideoId)
 
 	updatedSkippedTime := TotalSponsorTimeSkipped(youtubeVideoId)
-	if episodeHistory == nil {
+	if episodeHistory == nil || episodeHistory.YoutubeVideoId == "" {
 		return true, updatedSkippedTime
 	}
 
 	if math.Abs(episodeHistory.TotalTimeSkipped-updatedSkippedTime) > 2 {
-		file := database.FindFileWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId)
-		if file != "" {
-			os.Remove(file)
-		}
 		log.Debug("[SponsorBlock] Updating downloaded episode with new sponsor skips...")
 		return true, updatedSkippedTime
 	}
@@ -45,7 +43,7 @@ func TotalSponsorTimeSkipped(youtubeVideoId string) float64 {
 		}
 	}
 
-	resp, err := http.Get(endURL)
+	resp, err := sponsorBlockClient.Get(endURL)
 	if err != nil {
 		log.Error(err)
 		return 0
@@ -88,6 +86,9 @@ func calculateSkippedTime(segments []SponsorBlockResponse) float64 {
 	prevStopTime := float64(0)
 
 	for _, segment := range segments {
+		if len(segment.Segment) < 2 {
+			continue
+		}
 		startTime := segment.Segment[0]
 		stopTime := segment.Segment[1]
 

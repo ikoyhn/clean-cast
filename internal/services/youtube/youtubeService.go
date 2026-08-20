@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"ikoyhn/podcast-sponsorblock/internal/database"
 	"ikoyhn/podcast-sponsorblock/internal/enum"
@@ -20,15 +21,12 @@ func SetupYoutubeService() {
 	apiKey := config.AppConfig.Setup.GoogleApiKey
 	ctx := context.Background()
 	service, err := ytApi.NewService(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		log.Errorf("Error creating new YouTube client: %v", err)
-	}
-	if service == nil {
-		log.Errorf("Failed to create YouTube service: %v", err)
+	if err != nil || service == nil {
+		panic(fmt.Sprintf("Failed to create YouTube service: %v", err))
 	}
 	YtService = service
 }
-func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlaylist bool) *models.Podcast {
+func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlaylist bool) (*models.Podcast, error) {
 	var channelCall *ytApi.ChannelsListCall
 	var channelId string
 
@@ -38,10 +36,10 @@ func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlayl
 				Id(channelIdentifier)
 			playlistResponse, err := playlistCall.Do()
 			if err != nil {
-				log.Errorf("Error retrieving playlist details: %v", err)
+				return nil, fmt.Errorf("retrieving playlist details for %s: %w", channelIdentifier, err)
 			}
 			if len(playlistResponse.Items) == 0 {
-				log.Errorf("Playlist not found")
+				return nil, fmt.Errorf("playlist not found: %s", channelIdentifier)
 			}
 			playlist := playlistResponse.Items[0]
 			channelId = playlist.Snippet.ChannelId
@@ -53,10 +51,10 @@ func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlayl
 			Id(channelId)
 		channelResponse, err := channelCall.Do()
 		if err != nil {
-			log.Errorf("Error retrieving channel details: %v", err)
+			return nil, fmt.Errorf("retrieving channel details for %s: %w", channelId, err)
 		}
 		if len(channelResponse.Items) == 0 {
-			log.Errorf("Channel not found")
+			return nil, fmt.Errorf("channel not found: %s", channelId)
 		}
 		channel := channelResponse.Items[0]
 
@@ -85,7 +83,7 @@ func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlayl
 	dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
 	database.UpdatePodcast(dbPodcast)
 
-	return dbPodcast
+	return dbPodcast, nil
 }
 
 func GetVideosAndValidate(videoIdsNotSaved []string, podcastType enum.PodcastType, podcastId string) {
@@ -99,7 +97,8 @@ func GetVideosAndValidate(videoIdsNotSaved []string, podcastType enum.PodcastTyp
 
 	videoResponse, err := videoCall.Do()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Error retrieving video details: %v", err)
+		return
 	}
 
 	dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
