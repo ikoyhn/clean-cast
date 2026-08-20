@@ -119,6 +119,7 @@ func DeletePodcastCronJob() {
 					log.Debug("[DB] File not found when attempting to delete: " + filePath)
 				} else {
 					log.Warn("[DB] Failed to remove file: " + filePath + " error: " + err.Error())
+					continue
 				}
 			}
 		}

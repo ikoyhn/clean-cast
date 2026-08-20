@@ -5,20 +5,26 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/models"
 	"ikoyhn/podcast-sponsorblock/internal/services/common"
 	"os"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/labstack/gommon/log"
 )
 
+func stripExtension(filename string) string {
+	return strings.TrimSuffix(filename, path.Ext(filename))
+}
+
 func UpdateEpisodePlaybackHistory(youtubeVideoId string, totalTimeSkipped float64) {
 	log.Info("[DB] Updating episode playback history...")
-	db.Model(&models.EpisodePlaybackHistory{}).
-		Where("youtube_video_id = ?", youtubeVideoId).
-		FirstOrCreate(&models.EpisodePlaybackHistory{
-			YoutubeVideoId:   youtubeVideoId,
-			LastAccessDate:   time.Now().Unix(),
-			TotalTimeSkipped: totalTimeSkipped,
-		})
+	var history models.EpisodePlaybackHistory
+	db.Where(models.EpisodePlaybackHistory{YoutubeVideoId: youtubeVideoId}).
+		Assign(map[string]interface{}{
+			"last_access_date":   time.Now().Unix(),
+			"total_time_skipped": totalTimeSkipped,
+		}).
+		FirstOrCreate(&history)
 }
 
 func GetEpisodePlaybackHistory(youtubeVideoId string) *models.EpisodePlaybackHistory {
@@ -52,7 +58,7 @@ func TrackEpisodeFiles() {
 		}
 		found := false
 		for _, dbFile := range dbFiles {
-			if dbFile == filename[:len(filename)-4] {
+			if dbFile == stripExtension(filename) {
 				found = true
 				break
 			}
@@ -65,7 +71,7 @@ func TrackEpisodeFiles() {
 	for _, dbFile := range dbFiles {
 		found := false
 		for _, file := range files {
-			if dbFile == file.Name()[:len(file.Name())-4] {
+			if dbFile == stripExtension(file.Name()) {
 				found = true
 				break
 			}
@@ -76,7 +82,7 @@ func TrackEpisodeFiles() {
 	}
 
 	for _, filename := range missingFiles {
-		id := filename[:len(filename)-4]
+		id := stripExtension(filename)
 		if !common.IsValidID(id) {
 			continue
 		}
