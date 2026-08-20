@@ -7,6 +7,7 @@ import (
 	"ikoyhn/podcast-sponsorblock/internal/services/youtube"
 
 	"github.com/labstack/echo/v4"
+	log "github.com/labstack/gommon/log"
 	"github.com/lrstanley/go-ytdlp"
 )
 
@@ -16,7 +17,14 @@ func Start() {
 		panic(err)
 	}
 	youtube.SetupYoutubeService()
-	ytdlp.MustInstallAll(context.TODO())
+
+	ctx := context.TODO()
+	if _, err := ytdlp.Install(ctx, &ytdlp.InstallOptions{AllowVersionMismatch: true}); err != nil {
+		panic(err)
+	}
+	if _, err := ytdlp.New().Update(ctx); err != nil {
+		log.Warnf("yt-dlp self-update failed, continuing with current version: %v", err)
+	}
 
 	e := echo.New()
 	e.HideBanner = true

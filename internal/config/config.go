@@ -45,7 +45,7 @@ type Config struct {
 		CookiesFile            string `mapstructure:"cookies-file"`
 		SponsorBlockCategories string `mapstructure:"sponsorblock-categories"`
 		EpisodeDurationMinimum string `mapstructure:"episode-duration-minimum"`
-		YtdlpExtractorArgs     string `mapstructure:"ytdlp-extractor-args"`
+		YtdlpExtractorArgs     string `mapstructure:"extractor-args"`
 	} `mapstructure:"ytdlp"`
 }
 
@@ -98,7 +98,7 @@ func Load() (*Config, error) {
 	v.BindEnv("setup.cron", "CRON")
 	v.BindEnv("ytdlp.episode-duration-minimum", "MIN_DURATION")
 	v.BindEnv("ytdlp.sponsorblock-categories", "SPONSORBLOCK_CATEGORIES")
-	v.BindEnv("ytdlp.ytdlp-extractor-args", "YTDLP_EXTRACTOR_ARGS")
+	v.BindEnv("ytdlp.extractor-args", "YTDLP_EXTRACTOR_ARGS")
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
