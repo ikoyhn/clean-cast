@@ -33,9 +33,24 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 	}
 
 	if shouldUpdate {
-		dbPodcast = youtube.GetChannelData(dbPodcast, youtubePlaylistId, true)
-		getYoutubePlaylistData(youtubePlaylistId)
-		dbPodcast = database.GetPodcast(youtubePlaylistId)
+		updated, err := youtube.GetChannelData(dbPodcast, youtubePlaylistId, true)
+		if err != nil {
+			log.Errorf("[RSS FEED] Could not load playlist %s: %v", youtubePlaylistId, err)
+			if dbPodcast == nil {
+				return nil
+			}
+		} else {
+			dbPodcast = updated
+			getYoutubePlaylistData(youtubePlaylistId)
+			if refreshed := database.GetPodcast(youtubePlaylistId); refreshed != nil {
+				dbPodcast = refreshed
+			}
+		}
+	}
+
+	if dbPodcast == nil {
+		log.Errorf("[RSS FEED] No podcast data available for playlist %s", youtubePlaylistId)
+		return nil
 	}
 
 	episodes, err := database.GetPodcastEpisodesByPodcastId(youtubePlaylistId, enum.PLAYLIST)
@@ -65,8 +80,9 @@ func getYoutubePlaylistData(youtubePlaylistId string) {
 		}
 
 		response, ytAgainErr := call.Do()
-		if ytAgainErr != nil {
-			log.Errorf("Error calling YouTube API for Playlist: %s. Ensure your API key is valid, if your API key is valid you have have reached your API quota.", youtubePlaylistId)
+		if ytAgainErr != nil || response == nil {
+			log.Errorf("Error calling YouTube API for Playlist: %s (%v). Ensure your API key is valid, if your API key is valid you have have reached your API quota.", youtubePlaylistId, ytAgainErr)
+			return
 		}
 		if response.HTTPStatusCode != http.StatusOK {
 			log.Errorf("YouTube API returned status code %s for Playlist: %s", strconv.Itoa(response.HTTPStatusCode), youtubePlaylistId)

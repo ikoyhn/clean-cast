@@ -26,8 +26,14 @@ func registerRoutes(e *echo.Echo) {
 		if err := checkAuthentication(c); err != nil {
 			return err
 		}
-		rssRequestParams := validateQueryParams(c)
+		rssRequestParams, err := validateQueryParams(c)
+		if err != nil {
+			return err
+		}
 		data := channel.BuildChannelRssFeed(c.Param("channelId"), rssRequestParams, handler(c.Request()))
+		if data == nil {
+			return echo.NewHTTPError(http.StatusBadGateway, "Could not build channel feed")
+		}
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
@@ -38,9 +44,14 @@ func registerRoutes(e *echo.Echo) {
 		if err := checkAuthentication(c); err != nil {
 			return err
 		}
-		validateQueryParams(c)
+		if _, err := validateQueryParams(c); err != nil {
+			return err
+		}
 		playlistId := strings.Split(c.Param("youtubePlaylistId"), "&")[0]
 		data := playlist.BuildPlaylistRssFeed(playlistId, handler(c.Request()))
+		if data == nil {
+			return echo.NewHTTPError(http.StatusBadGateway, "Could not build playlist feed")
+		}
 		c.Response().Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		c.Response().Header().Set("Content-Length", strconv.Itoa(len(data)))
 		c.Response().Header().Del("Transfer-Encoding")
@@ -57,7 +68,7 @@ func registerRoutes(e *echo.Echo) {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid file name")
 		}
 		if !common.IsValidParam(youtubeVideoId) {
-			c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
+			return echo.NewHTTPError(http.StatusBadRequest, "Invalid video id")
 		}
 
 		audioDirAbs, err := filepath.Abs(config.AppConfig.Setup.AudioDir)
@@ -72,21 +83,16 @@ func registerRoutes(e *echo.Echo) {
 		file, err := os.Open(filePath)
 
 		if file == nil || err != nil || needRedownload {
-			done := downloader.GetYoutubeVideo(youtubeVideoId)
-			<-done
+			if file != nil {
+				file.Close()
+			}
+			<-downloader.GetYoutubeVideo(youtubeVideoId, needRedownload)
 			filePath = database.FindFileWithId(audioDirAbs, youtubeVideoId)
 			file, err = os.Open(filePath)
 			if err != nil || file == nil {
-				return err
+				log.Errorf("[MEDIA] No file available for %s: %v", youtubeVideoId, err)
+				return echo.NewHTTPError(http.StatusNotFound, "Episode unavailable")
 			}
-			defer file.Close()
-
-			rangeHeader := c.Request().Header.Get("Range")
-			if rangeHeader != "" {
-				http.ServeFile(c.Response().Writer, c.Request(), filePath)
-				return nil
-			}
-			return c.Stream(http.StatusOK, "audio/mp4", file)
 		}
 
 		defer file.Close()
@@ -109,34 +115,32 @@ func registerRoutes(e *echo.Echo) {
 
 }
 
-func validateQueryParams(c echo.Context) *models.RssRequestParams {
+func validateQueryParams(c echo.Context) (*models.RssRequestParams, error) {
 	limitVar := c.Request().URL.Query().Get("limit")
 	dateVar := c.Request().URL.Query().Get("date")
 	if !common.IsValidParam(c.Param("channelId")) {
-		c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id"))
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid channel id")
 	}
-	if c.Request().URL.Query().Get("limit") != "" && c.Request().URL.Query().Get("date") != "" {
-		c.Error(echo.NewHTTPError(http.StatusBadRequest, "Invalid parameters"))
+	if limitVar != "" && dateVar != "" {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid parameters")
 	}
 
 	if limitVar != "" {
-		limitInt, err := strconv.Atoi(c.Request().URL.Query().Get("limit"))
+		limitInt, err := strconv.Atoi(limitVar)
 		if err != nil {
-			log.Error(err)
-			return nil
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid limit")
 		}
-		return &models.RssRequestParams{Limit: &limitInt, Date: nil}
+		return &models.RssRequestParams{Limit: &limitInt, Date: nil}, nil
 	}
 
 	if dateVar != "" {
 		parsedDate, err := time.Parse("01-02-2006", dateVar)
 		if err != nil {
-			log.Error("Error parsing date string:", err)
-			return nil
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid date, expected MM-DD-YYYY")
 		}
-		return &models.RssRequestParams{Limit: nil, Date: &parsedDate}
+		return &models.RssRequestParams{Limit: nil, Date: &parsedDate}, nil
 	}
-	return &models.RssRequestParams{Limit: nil, Date: nil}
+	return &models.RssRequestParams{Limit: nil, Date: nil}, nil
 }
 
 func setupCron() {

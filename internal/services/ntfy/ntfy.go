@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"ikoyhn/podcast-sponsorblock/internal/config"
 	"net/http"
+	"time"
 )
+
+var ntfyClient = &http.Client{Timeout: 10 * time.Second}
 
 func SendNotification(message, title string) error {
 	if config.AppConfig.Ntfy.Server == "" || config.AppConfig.Ntfy.Topic == "" {
@@ -27,8 +30,7 @@ func SendNotification(message, title string) error {
 		req.SetBasicAuth("", config.AppConfig.Ntfy.Authentication.Token)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := ntfyClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -19,18 +19,16 @@ var youtubeVideoMutexes = &sync.Map{}
 
 const youtubeVideoUrl = "https://www.youtube.com/watch?v="
 
-func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
-	mutex, ok := youtubeVideoMutexes.Load(youtubeVideoId)
-	if !ok {
-		mutex = &sync.Mutex{}
-		youtubeVideoMutexes.Store(youtubeVideoId, mutex)
-	}
+func GetYoutubeVideo(youtubeVideoId string, forceRedownload bool) <-chan struct{} {
+	mutex, _ := youtubeVideoMutexes.LoadOrStore(youtubeVideoId, &sync.Mutex{})
 
 	mutex.(*sync.Mutex).Lock()
 
-	if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
+	if !forceRedownload && database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
 		mutex.(*sync.Mutex).Unlock()
-		return make(chan struct{})
+		alreadyDownloaded := make(chan struct{})
+		close(alreadyDownloaded)
+		return alreadyDownloaded
 	}
 
 	title := youtubeVideoId
@@ -60,6 +58,9 @@ func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 		}).
 		Output(youtubeVideoId + ".%(ext)s")
 
+	if forceRedownload {
+		dl.ForceOverwrites()
+	}
 	if config.AppConfig.Ytdlp.CookiesFile != "" {
 		dl.Cookies(config.AppConfig.Ytdlp.CookiesFile)
 	}
@@ -69,7 +70,26 @@ func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 
 	done := make(chan struct{})
 	go func() {
+		defer close(done)
+		defer mutex.(*sync.Mutex).Unlock()
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Errorf("Panic while downloading %s: %v", youtubeVideoId, rec)
+			}
+		}()
+
 		r, dlErr := dl.Run(context.TODO(), youtubeVideoUrl+youtubeVideoId)
+
+		if r == nil {
+			if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
+				ntfy.SendNotification("Download completed!", "Clean Cast - Success")
+				log.Warn("Download returned no result, but file exists: ", youtubeVideoId)
+			} else {
+				ntfy.SendNotification("Download failed!", "Clean Cast - Error")
+				log.Errorf("Error downloading YouTube video %s: %v", youtubeVideoId, dlErr)
+			}
+			return
+		}
 
 		if r.ExitCode != 0 {
 			if database.FileExistsWithId(config.AppConfig.Setup.AudioDir, youtubeVideoId) {
@@ -85,8 +105,6 @@ func GetYoutubeVideo(youtubeVideoId string) <-chan struct{} {
 			log.Infof("%s download completed successfully.", title)
 			ntfy.SendNotification(fmt.Sprintf("%s download success!", title), "Clean Cast - Success")
 		}
-		mutex.(*sync.Mutex).Unlock()
-		close(done)
 	}()
 
 	return done
