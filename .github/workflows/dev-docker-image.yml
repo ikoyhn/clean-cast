@@ -3,7 +3,6 @@ name: Docker Image Dev CI
 on:
   workflow_dispatch:
 
-# Only checkout needs the token; pushing images uses Docker Hub credentials.
 permissions:
   contents: read
 

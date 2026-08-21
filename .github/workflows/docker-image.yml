@@ -6,7 +6,6 @@ on:
   release:
     types: [created]
 
-# Only checkout needs the token; pushing images uses Docker Hub credentials.
 permissions:
   contents: read
 
