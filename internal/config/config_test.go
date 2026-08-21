@@ -35,7 +35,6 @@ setup:
 }
 
 func TestLoad_DefaultsWhenKeyPresentButEmpty(t *testing.T) {
-	// Matches the shipped template, where keys are listed with no value.
 	writeConfigDir(t, `
 setup:
     google-api-key: testkey
@@ -58,7 +57,6 @@ ytdlp:
 }
 
 func TestLoad_RejectsInvalidDurationInsteadOfPanicking(t *testing.T) {
-	// "1hr" is not valid Go duration syntax; it used to panic on every request.
 	writeConfigDir(t, `
 setup:
     google-api-key: testkey

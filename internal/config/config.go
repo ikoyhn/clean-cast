@@ -17,7 +17,7 @@ type Config struct {
 		GoogleApiKey           string `mapstructure:"google-api-key" validate:"required"`
 		AudioDir               string
 		Cron                   string `mapstructure:"cron"`
-		ConfigDir              string        `mapstructure:"config-dir" validate:"required"`
+		ConfigDir              string `mapstructure:"config-dir" validate:"required"`
 		DbFile                 string
 		PodcastRefreshInterval time.Duration `mapstructure:"podcast-refresh-interval" validate:"gte=0"`
 	} `mapstructure:"setup"`
@@ -103,8 +103,6 @@ func Load() (*Config, error) {
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		// Durations are the only non-string settings, so a decode failure here is
-		// always a malformed duration and viper's own message omits the syntax.
 		return nil, fmt.Errorf(
 			"unmarshal config: %w (durations must be a number followed by ns, us, ms, s, m or h, for example 30s, 5m or 1h)",
 			err)

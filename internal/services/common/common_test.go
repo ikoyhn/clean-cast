@@ -6,8 +6,6 @@ import (
 )
 
 func TestParseLastBuildDate_RoundTripsAcrossZones(t *testing.T) {
-	// Zones whose abbreviation is a numeric offset used to break the round trip:
-	// RFC1123 formats them as "+0545" and cannot parse that back.
 	zones := []*time.Location{
 		time.UTC,
 		time.FixedZone("+0545", 5*3600+45*60),
@@ -31,7 +29,6 @@ func TestParseLastBuildDate_RoundTripsAcrossZones(t *testing.T) {
 }
 
 func TestParseLastBuildDate_AcceptsLegacyRFC1123(t *testing.T) {
-	// Rows written by older versions must keep working after the format change.
 	legacy := "Mon, 18 Aug 2026 22:06:52 UTC"
 
 	parsed, err := ParseLastBuildDate(legacy)
