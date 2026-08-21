@@ -86,12 +86,9 @@ func GetPodcastEpisodesByPodcastId(podcastId string, podcastType enum.PodcastTyp
 			return nil, err
 		}
 	} else if podcastType == enum.CHANNEL {
-		dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
-		if err != nil {
-			return nil, err
-		}
+		dur := config.AppConfig.Ytdlp.EpisodeDurationMinimum
 
-		err = db.Where("podcast_id = ? AND duration >= ?", podcastId, dur).
+		err := db.Where("podcast_id = ? AND duration >= ?", podcastId, dur).
 			Order("published_date DESC").
 			Find(&episodes).Error
 		if err != nil {

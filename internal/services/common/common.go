@@ -32,6 +32,17 @@ func CleanPlaylistItems(item *ytApi.PlaylistItem) *ytApi.PlaylistItem {
 	return nil
 }
 
+func FormatLastBuildDate(t time.Time) string {
+	return t.UTC().Format(time.RFC3339)
+}
+
+func ParseLastBuildDate(value string) (time.Time, error) {
+	if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+		return parsed, nil
+	}
+	return time.Parse(time.RFC1123, value)
+}
+
 func ParseDuration(durationStr string) (time.Duration, error) {
 	// Remove the 'PT' prefix from the duration string
 	durationStr = strings.Replace(durationStr, "PT", "", 1)

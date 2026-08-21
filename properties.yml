@@ -1,7 +1,7 @@
 ## Main settings for application
 # REQUIRED: "google-api-key"  - can either be set in here or in docker run command, view here to get an API key (https://developers.google.com/youtube/v3/getting-started)
 # OPTIONAL: "cron" - can be set manually, this is used to clean up old audio files that have not been accessed in one week (default)
-# OPTIONAL: "cron" - can be set manually, this is used to limit how often podcasts are refreshed from YouTube (default every 1h), Example values: (30s, 5m, 1hr)
+# OPTIONAL: "podcast-refresh-interval" - can be set manually, this is used to limit how often podcasts are refreshed from YouTube (default every 1h), Example values: (30s, 5m, 1h)
 ###
 setup:
     google-api-key:
@@ -38,7 +38,7 @@ authentication:
 ### YTDLP Settings
 # OPTIONAL: "cookies-file" - Set this if you want to use custom cookies for YT-DLP, store your cookies file in /config directory
 # OPTIONAL: "sponsorblock-categories" - Customize the categories that you would like to remove from your podcasts. String separated by `,` with possible values `sponsor,selfpromo,interaction,intro,outro,preview,music_offtopic,filler`. Default: `sponsor`
-# OPTIONAL: "episode-duration-minimum" - To filter out YT shorts for `/channel` podcasts there is a minimum duration a video has to be in order to grab it. The default is 5min, modify as needed. Example values: (30s, 5m, 1hr)
+# OPTIONAL: "episode-duration-minimum" - To filter out YT shorts for `/channel` podcasts there is a minimum duration a video has to be in order to grab it. The default is 3m, modify as needed. Example values: (30s, 5m, 1h)
 # OPTIONAL: "extractor-args" - Custom YTDLP extractor args
 ###
 ytdlp:

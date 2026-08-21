@@ -25,8 +25,8 @@ func SetupIntegration(t *testing.T) {
 	config.AppConfig.Setup.ConfigDir = tmpDir
 	config.AppConfig.Setup.DbFile = path.Join(tmpDir, "test.db")
 	config.AppConfig.Setup.AudioDir = path.Join(tmpDir, "audio")
-	config.AppConfig.Setup.PodcastRefreshInterval = "0s"
-	config.AppConfig.Ytdlp.EpisodeDurationMinimum = "0s"
+	config.AppConfig.Setup.PodcastRefreshInterval = 0
+	config.AppConfig.Ytdlp.EpisodeDurationMinimum = 0
 
 	if err := os.MkdirAll(config.AppConfig.Setup.AudioDir, 0755); err != nil {
 		t.Fatalf("failed to create audio dir: %v", err)
