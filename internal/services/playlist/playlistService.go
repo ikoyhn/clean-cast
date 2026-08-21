@@ -21,14 +21,14 @@ func BuildPlaylistRssFeed(youtubePlaylistId string, host string) []byte {
 
 	shouldUpdate := true
 	if dbPodcast != nil && dbPodcast.LastBuildDate != "" {
-		dur, err := time.ParseDuration(config.AppConfig.Setup.PodcastRefreshInterval)
+		dur := config.AppConfig.Setup.PodcastRefreshInterval
+		lastBuild, err := common.ParseLastBuildDate(dbPodcast.LastBuildDate)
 		if err != nil {
-			panic("Invalid [podcast-refresh-interval] format. Use formats like '5m', '1h', '400s'.")
-		}
-		lastBuild, err := time.Parse(time.RFC1123, dbPodcast.LastBuildDate)
-		if err == nil && time.Since(lastBuild) < dur {
+			log.Warnf("[YOUTUBE API] Unreadable last build date %q for playlist %s, refreshing: %v",
+				dbPodcast.LastBuildDate, youtubePlaylistId, err)
+		} else if time.Since(lastBuild) < dur {
 			shouldUpdate = false
-			log.Infof("[YOUTUBE API] Skipping channel update, last build date within %v", dur)
+			log.Infof("[YOUTUBE API] Skipping playlist update, last build date within %v", dur)
 		}
 	}
 

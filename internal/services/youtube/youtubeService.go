@@ -80,7 +80,7 @@ func GetChannelData(dbPodcast *models.Podcast, channelIdentifier string, isPlayl
 			Explicit:        "false",
 		}
 	}
-	dbPodcast.LastBuildDate = time.Now().Format(time.RFC1123)
+	dbPodcast.LastBuildDate = common.FormatLastBuildDate(time.Now())
 	database.UpdatePodcast(dbPodcast)
 
 	return dbPodcast, nil
@@ -101,10 +101,7 @@ func GetVideosAndValidate(videoIdsNotSaved []string, podcastType enum.PodcastTyp
 		return
 	}
 
-	dur, err := time.ParseDuration(config.AppConfig.Ytdlp.EpisodeDurationMinimum)
-	if err != nil {
-		panic("Invalid MIN_DURATION format. Use formats like '5m', '1h', '400s'.")
-	}
+	dur := config.AppConfig.Ytdlp.EpisodeDurationMinimum
 
 	for _, item := range videoResponse.Items {
 		if item.Id != "" {

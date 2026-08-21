@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
@@ -16,9 +17,9 @@ type Config struct {
 		GoogleApiKey           string `mapstructure:"google-api-key" validate:"required"`
 		AudioDir               string
 		Cron                   string `mapstructure:"cron"`
-		ConfigDir              string `mapstructure:"config-dir" validate:"required"`
+		ConfigDir              string        `mapstructure:"config-dir" validate:"required"`
 		DbFile                 string
-		PodcastRefreshInterval string `mapstructure:"podcast-refresh-interval"`
+		PodcastRefreshInterval time.Duration `mapstructure:"podcast-refresh-interval" validate:"gte=0"`
 	} `mapstructure:"setup"`
 
 	Ntfy struct {
@@ -42,10 +43,10 @@ type Config struct {
 	} `mapstructure:"authentication"`
 
 	Ytdlp struct {
-		CookiesFile            string `mapstructure:"cookies-file"`
-		SponsorBlockCategories string `mapstructure:"sponsorblock-categories"`
-		EpisodeDurationMinimum string `mapstructure:"episode-duration-minimum"`
-		YtdlpExtractorArgs     string `mapstructure:"extractor-args"`
+		CookiesFile            string        `mapstructure:"cookies-file"`
+		SponsorBlockCategories string        `mapstructure:"sponsorblock-categories"`
+		EpisodeDurationMinimum time.Duration `mapstructure:"episode-duration-minimum" validate:"gte=0"`
+		YtdlpExtractorArgs     string        `mapstructure:"extractor-args"`
 	} `mapstructure:"ytdlp"`
 }
 
@@ -102,7 +103,11 @@ func Load() (*Config, error) {
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("unmarshal config: %w", err)
+		// Durations are the only non-string settings, so a decode failure here is
+		// always a malformed duration and viper's own message omits the syntax.
+		return nil, fmt.Errorf(
+			"unmarshal config: %w (durations must be a number followed by ns, us, ms, s, m or h, for example 30s, 5m or 1h)",
+			err)
 	}
 
 	if err := validate.Struct(&cfg); err != nil {
